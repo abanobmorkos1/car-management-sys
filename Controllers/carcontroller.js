@@ -1,6 +1,6 @@
 const Car = require('../models/Car');
 
-// Add Car
+
 const addCar = async (req, res) => {
   const { make, model, year, pricePerDay } = req.body;
   try {
@@ -11,7 +11,6 @@ const addCar = async (req, res) => {
   }
 };
 
-// Get All Cars
 const getAllCars = async (req, res) => {
   try {
     const cars = await Car.find({});

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+  const mongoose = require('mongoose');
 
 const leaseSchema = new mongoose.Schema({
   // carId: { type: mongoose.Schema.Types.ObjectId, ref: 'Car' },
