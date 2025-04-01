@@ -7,6 +7,6 @@ const router = express.Router();
 router.post('/createlr', addCar);
 
 // Get all lease returns
-router.get('/getlr', getAllCars);
+router.get('/Leasereturns', getAllCars);
 
 module.exports = router;

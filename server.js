@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const connectDB = require('./Config/db');
 const leaseRoutes = require('./Routes/lease');
+const getLeasereturn = require('./Routes/lease');
 
 dotenv.config();
 connectDB();
@@ -16,7 +17,8 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 
 // Lease return routes
-app.use('/api/lease', leaseRoutes);
+app.use('/lease', leaseRoutes);
+app.use('/getLease', getLeasereturn);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Lease Management API!');
