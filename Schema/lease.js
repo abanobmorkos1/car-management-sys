@@ -1,14 +1,11 @@
-  const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const leaseSchema = new mongoose.Schema({
   // carId: { type: mongoose.Schema.Types.ObjectId, ref: 'Car' },
   // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  year: { 
-    type: Number, 
-    required: true,
-    min: [1900, 'Year must be after 1900'],
+  year: { type: Number, required: true, min: [1900, 'Year must be after 1900'],
     max: [new Date().getFullYear(), 'Year cannot be in the future']
-  },
+  } ,
   make: { type: String, required: true },
   model: { type: String, required: true },
   miles: { type: Number, required: true },
@@ -18,11 +15,11 @@ const leaseSchema = new mongoose.Schema({
   address: { type: String, required: true },
   salesPerson: { type: String, required: true },
   driver: { type: String, required: true },
-  pickedDate: { type: String, default: null },
+  pickedDate: { type: String, default: Date.now },
   damageReport: { type: String, required: true },
   hasTitle: { type: Boolean, required: true, default: false },  // Add boolean for title
   titlePicture: { type: String, required: function() { return this.hasTitle; } },  // Conditional field for picture
-});
+  },{ timestamps: true });
 
 // Function to update pickup date
 leaseSchema.methods.setPickupDate = function(pickedUpToday, customDate = null) {

@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const connectDB = require('./Config/db');
 const leaseRoutes = require('./Routes/lease');
 const getLeasereturn = require('./Routes/lease');
+const  deleteLr = require('./Routes/lease');
+const  updateLr = require('./Routes/lease')
 
 dotenv.config();
 connectDB();
@@ -18,7 +20,14 @@ app.use(bodyParser.json());
 
 // Lease return routes
 app.use('/lease', leaseRoutes);
-app.use('/getLease', getLeasereturn);
+app.use('/lease', getLeasereturn);
+app.use('/lease',deleteLr )
+app.use('/lease', updateLr)
+
+
+// New contarct
+
+
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Lease Management API!');
