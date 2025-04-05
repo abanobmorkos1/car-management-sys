@@ -7,7 +7,7 @@ const leaseRoutes = require('./Routes/lease');
 const getLeasereturn = require('./Routes/lease');
 const  deleteLr = require('./Routes/lease');
 const  updateLr = require('./Routes/lease')
-
+const salesRoutes = require('./Routes/sales')
 dotenv.config();
 connectDB();
 
@@ -25,7 +25,11 @@ app.use('/lease',deleteLr )
 app.use('/lease', updateLr)
 
 
-// New contarct
+// New Car 
+
+
+// Sales Routes
+app.use('/sales', salesRoutes);
 
 
 
