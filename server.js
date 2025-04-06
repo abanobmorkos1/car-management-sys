@@ -4,10 +4,8 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const connectDB = require('./Config/db');
 const leaseRoutes = require('./Routes/lease');
-const getLeasereturn = require('./Routes/lease');
-const  deleteLr = require('./Routes/lease');
-const  updateLr = require('./Routes/lease')
 const salesRoutes = require('./Routes/sales')
+
 dotenv.config();
 connectDB();
 
@@ -20,12 +18,10 @@ app.use(bodyParser.json());
 
 // Lease return routes
 app.use('/lease', leaseRoutes);
-app.use('/lease', getLeasereturn);
-app.use('/lease',deleteLr )
-app.use('/lease', updateLr)
 
 
 // New Car 
+app.use('/cars', require('./Routes/carRoutes')); // Assuming you have a carRoutes file for handling car creation and uploads
 
 
 // Sales Routes

@@ -1,5 +1,4 @@
 const express = require("express");
-const router = express.Router();
 const Lease = require('../Schema/lease');
 
 // Add a new lease return

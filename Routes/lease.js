@@ -13,9 +13,6 @@ router.get('/getlr', getAllCars);
 router.delete('/deletelLr/:id', deleteCar);
 
 // Update a lease by ID
-
 router.put('/updateLr/:id', updateCar);
-
-
 
 module.exports = router;
