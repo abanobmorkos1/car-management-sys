@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 
 const leaseSchema = new mongoose.Schema({
-  // carId: { type: mongoose.Schema.Types.ObjectId, ref: 'Car' },
-  // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  year: { type: Number, required: true, min: [1900, 'Year must be after 1900'],
-    max: [new Date().getFullYear(), 'Year cannot be in the future']
-  } ,
+  year: {
+    type: Number,
+    required: true,
+    min: [1900, 'Year must be after 1900'],
+    max: [new Date().getFullYear(), 'Year cannot be in the future'],
+  },
   make: { type: String, required: true },
   model: { type: String, required: true },
   miles: { type: Number, required: true },
@@ -15,20 +16,23 @@ const leaseSchema = new mongoose.Schema({
   address: { type: String, required: true },
   salesPerson: { type: String, required: true },
   driver: { type: String, required: true },
-  pickedDate: { type: String, default: Date.now },
+  pickedDate: { type: Date, default: Date.now },
   damageReport: { type: String, required: true },
-  hasTitle: { type: Boolean, required: true, default: false },  // Add boolean for title
-  titlePicture: { type: String, required: function() { return this.hasTitle; } },  // Conditional field for picture
-  },{ timestamps: true });
+  hasTitle: { type: Boolean, required: true, default: false },
+  titlePicture: {
+    type: String,
+    required: [function () { return this.hasTitle; }, 'Title picture is required when hasTitle is true']
+  },
+}, { timestamps: true });
 
-// Function to update pickup date
+// Method to update pickedDate
 leaseSchema.methods.setPickupDate = function(pickedUpToday, customDate = null) {
   if (pickedUpToday) {
-    this.pickupDate = new Date(); // Set pickupDate to current date if picked up today
+    this.pickedDate = new Date();
   } else if (customDate) {
-    this.pickupDate = new Date(customDate);  // Set pickupDate to custom date if provided
+    this.pickedDate = new Date(customDate);
   } else {
-    this.pickupDate = null;  // Optional: Set to null if no date is provided
+    this.pickedDate = null;
   }
 };
 

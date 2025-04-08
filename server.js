@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const connectDB = require('./Config/db');
 const leaseRoutes = require('./Routes/lease');
 const salesRoutes = require('./Routes/sales')
+const generateURLRoutes = require('./Routes/generateURL');
+const newCarRoutes = require('./Routes/car'); // Assuming you have a carRoutes file for handling car creation and uploads
 
 dotenv.config();
 connectDB();
@@ -18,10 +20,10 @@ app.use(bodyParser.json());
 
 // Lease return routes
 app.use('/lease', leaseRoutes);
-
-
+// 
+app.use('/upload', generateURLRoutes)
 // New Car 
-app.use('/cars', require('./Routes/carRoutes')); // Assuming you have a carRoutes file for handling car creation and uploads
+app.use('/car', newCarRoutes); // Assuming you have a carRoutes file for handling car creation and uploads
 
 
 // Sales Routes
