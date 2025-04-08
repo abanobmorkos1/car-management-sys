@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const vinValidator = require('vin-validator');
 
 const leaseSchema = new mongoose.Schema({
   year: {
@@ -10,7 +11,17 @@ const leaseSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   miles: { type: Number, required: true },
-  vin: { type: String, required: true },
+  vin: {
+    type: String,
+    required: true,
+    set: v => v.toUpperCase(),
+    validate: {
+      validator: function (v) {
+        return /^[A-HJ-NPR-Z0-9]{17}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid VIN number`
+    }
+  },
   bank: { type: String, required: true },
   customerName: { type: String, required: true },
   address: { type: String, required: true },

@@ -23,6 +23,7 @@
     "multer-s3": "^3.0.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
-    "twilio": "^5.5.1"
+    "twilio": "^5.5.1",
+    "vin-validator": "^1.0.0"
   }
 }

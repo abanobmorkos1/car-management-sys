@@ -4,11 +4,24 @@ const Lease = require('../Schema/lease');
 // Add a new lease return
 const addCar = async (req, res) => {
   try {
-    const newCar = new Lease(req.body);
-    const saveLr = await newCar.save();
-    res.status(201).json(saveLr);
+    const newCar = new Lease(req.body); // Mongoose schema will validate this
+    const savedLease = await newCar.save(); // Will trigger the titlePicture validation
+
+    res.status(201).json(savedLease); // Success
   } catch (error) {
-    res.status(500).json({ message: 'Server error while adding car', error: error.message });
+    if (error.name === 'ValidationError') {
+      // Handle validation errors (like titlePicture required when hasTitle is true)
+      return res.status(400).json({
+        message: 'Validation error',
+        error: error.message
+      });
+    }
+
+    // Handle unexpected server errors
+    res.status(500).json({
+      message: 'Server error while adding lease',
+      error: error.message
+    });
   }
 };
 
