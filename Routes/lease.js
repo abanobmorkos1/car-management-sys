@@ -1,18 +1,17 @@
 const express = require('express');
-const { addCar, getAllCars, deleteCar , updateCar } = require('../Controllers/leasecontroller');
-
+const { addLr, getAlllr, deleteLr , updateLr } = require('../Controllers/leasecontroller');
 const router = express.Router();
 
 // Add a lease return
-router.post('/createlr', addCar);
+router.post('/createlr', addLr);
 
 // Get all lease returns
-router.get('/getlr', getAllCars);
+router.get('/getlr', getAlllr);
 
 // Delete a lease by ID
-router.delete('/deletelLr/:id', deleteCar);
+router.delete('/deletelLr/:id', deleteLr);
 
 // Update a lease by ID
-router.put('/updateLr/:id', updateCar);
+router.put('/updateLr/:id', updateLr);
 
 module.exports = router;

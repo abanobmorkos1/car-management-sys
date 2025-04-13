@@ -1,32 +1,80 @@
 const express = require("express");
 const Lease = require('../Schema/lease');
 
-// Add a new lease return
-const addCar = async (req, res) => {
-  try {
-    const newCar = new Lease(req.body); // Mongoose schema will validate this
-    const savedLease = await newCar.save(); // Will trigger the titlePicture validation
+const getCarDetailsFromVin = async (vin) => {
+  const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+  const data = await response.json();
+  const results = data.Results;
 
-    res.status(201).json(savedLease); // Success
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      // Handle validation errors (like titlePicture required when hasTitle is true)
-      return res.status(400).json({
-        message: 'Validation error',
-        error: error.message
-      });
+  // DEBUG LOG – this will show you all fields returned
+  // console.log('Decoded VIN Results:', JSON.stringify(results, null, 2));
+
+  const get = (label) => results.find(r => r.Variable === label)?.Value?.trim() || null;
+
+  return {
+    year: get('Model Year'),
+    make: get('Make'),
+    model: get('Model') || get('Series') || get('Vehicle Type'),
+    trim: get('Trim') || get('Series') || get('Model Trim') || get('Base Trim'),
+    bodyStyle: get('Body Class'),
+    engine: get('Engine Model') || get('Engine Configuration'),
+    fuelType: get('Fuel Type - Primary'),
+    driveType: get('Drive Type'),
+    plant: get('Plant City'),
+    doors: parseInt(get('Doors')) || null,
+    transmission: get('Transmission Style')
+  };
+};
+
+
+// Add a new lease return
+const addLr = async (req, res) => {
+  try {
+    const {
+      vin, miles, bank, customerName, address,
+      salesPerson, driver, damageReport, hasTitle, titlePicture
+    } = req.body;
+
+    const vinInfo = await getCarDetailsFromVin(vin);
+
+    if (!vinInfo.make || !vinInfo.model || !vinInfo.year) {
+      return res.status(400).json({ message: 'Unable to decode VIN' });
     }
 
-    // Handle unexpected server errors
-    res.status(500).json({
-      message: 'Server error while adding lease',
-      error: error.message
+    const newLease = new Lease({
+      vin,
+      year: parseInt(vinInfo.year),
+      make: vinInfo.make,
+      model: vinInfo.model,
+      trim: vinInfo.trim,
+      bodyStyle: vinInfo.bodyStyle,
+      engine: vinInfo.engine,
+      fuelType: vinInfo.fuelType,
+      driveType: vinInfo.driveType,
+      plant: vinInfo.plant,
+      doors: vinInfo.doors,
+      transmission: vinInfo.transmission,
+      miles,
+      bank,
+      customerName,
+      address,
+      salesPerson,
+      driver,
+      damageReport,
+      hasTitle,
+      titlePicture
     });
+
+    const savedLease = await newLease.save();
+    res.status(201).json(savedLease);
+  } catch (err) {
+    console.error('Error creating lease:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
 // Get all lease returns
-const getAllCars = async (req, res) => {
+const getAlllr = async (req, res) => {
   try {
     const cars = await Lease.find({}); // Get all cars (or lease returns)
 
@@ -44,7 +92,7 @@ const getAllCars = async (req, res) => {
 };
 
 // Delete a lease by ID
-const deleteCar = async (req, res) => {
+const deleteLr = async (req, res) => {
   try {
     const deletedCar = await Lease.findByIdAndDelete(req.params.id);
     
@@ -58,7 +106,7 @@ const deleteCar = async (req, res) => {
   }
 };
 
-const updateCar = async (req, res) => {
+const updateLr = async (req, res) => {
   try {
     const updatedCar = await Lease.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
@@ -76,4 +124,4 @@ const updateCar = async (req, res) => {
 };
 
 
-module.exports = { addCar, getAllCars , deleteCar, updateCar};
+module.exports = { addLr, getAlllr , deleteLr, updateLr};

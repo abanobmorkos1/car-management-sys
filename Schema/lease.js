@@ -10,6 +10,15 @@ const leaseSchema = new mongoose.Schema({
   },
   make: { type: String, required: true },
   model: { type: String, required: true },
+  trim: { type: String },
+  bodyStyle: { type: String },
+  engine: { type: String },
+  fuelType: { type: String },
+  driveType: { type: String },
+  plant: { type: String },
+  doors: { type: Number },
+  transmission: { type: String },
+
   miles: { type: Number, required: true },
   vin: {
     type: String,
@@ -17,9 +26,9 @@ const leaseSchema = new mongoose.Schema({
     set: v => v.toUpperCase(),
     validate: {
       validator: function (v) {
-        return /^[A-HJ-NPR-Z0-9]{17}$/.test(v);
+        return vinValidator.validate(v);
       },
-      message: props => `${props.value} is not a valid VIN number`
+      message: props => `${props.value} is not a valid VIN`
     }
   },
   bank: { type: String, required: true },

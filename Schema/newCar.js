@@ -9,10 +9,10 @@ const carSchema = new Schema({
   salespersonId: { type: Schema.Types.ObjectId, ref: 'Salesperson', required: true },
   driver: { type: String, required: true },
   pickedDate: { type: Date, default: Date.now },
-  damageReport: { type: String, default: 'No report' }, // Default text
-  pictureUrls: [{ type: String }], // Support for multiple pictures
-  videoUrl: { type: String },      // Single video
+  damageReport: { type: String, default: 'No report' },
+  pictureUrls: [{ type: String }],   // Car images
+  videoUrl: { type: String },        // Car video
+  driverIdPicture: { type: String }  // ✅ Optional driver's ID picture URL
 }, { timestamps: true });
 
 module.exports = mongoose.model('Car', carSchema);
-
