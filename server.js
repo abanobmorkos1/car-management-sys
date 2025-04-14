@@ -16,7 +16,6 @@ const deliveryRoutes = require('./Routes/deliveries');
 // cod routes
 const codRoutes = require('./Routes/cod');
 
-
 dotenv.config();
 connectDB();
 
@@ -34,7 +33,6 @@ app.use('/upload', generateURLRoutes)
 // New Car 
 app.use('/car', newCarRoutes); 
 // Sales Routes
-app.use('/sales', salesRoutes);
 // Delivery Routes
 app.use('/newdelivery', deliveryRoutes);
 // COD Routes
@@ -47,5 +45,4 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-
-// git log -1 --pretty=%B
+// git log -1 --pretty=%B 

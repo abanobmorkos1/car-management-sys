@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-
-const carSchema = new Schema({
+const carSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
@@ -15,4 +14,4 @@ const carSchema = new Schema({
   driverIdPicture: { type: String }  // ✅ Optional driver's ID picture URL
 }, { timestamps: true });
 
-module.exports = mongoose.model('Car', carSchema);
+module.exports = mongoose.model('NewCar', carSchema);

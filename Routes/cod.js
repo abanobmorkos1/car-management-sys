@@ -4,7 +4,7 @@ const upload = require('../Utils/aws');
 const { createCOD } = require('../Controllers/codcontroller');
 
 router.post(
-  '/cod',
+  '/newcod',
   upload.fields([
     { name: 'contractPicture', maxCount: 3 },
     { name: 'checkPicture', maxCount: 1 }

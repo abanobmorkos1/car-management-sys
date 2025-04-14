@@ -56,4 +56,4 @@ leaseSchema.methods.setPickupDate = function(pickedUpToday, customDate = null) {
   }
 };
 
-module.exports = mongoose.model('Lease', leaseSchema);
+module.exports = mongoose.model('LeaseReturns', leaseSchema);

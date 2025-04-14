@@ -1,4 +1,4 @@
-const COD = require('../models/cod');
+const COD = require('../Schema/cod');
 
 const createCOD = async (req, res) => {
   try {
@@ -31,3 +31,5 @@ const createCOD = async (req, res) => {
     res.status(500).json({ message: 'Error saving COD', error: err.message });
   }
 };
+
+module.exports = { createCOD }

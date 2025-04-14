@@ -124,4 +124,9 @@ const updateLr = async (req, res) => {
 };
 
 
-module.exports = { addLr, getAlllr , deleteLr, updateLr};
+module.exports = {
+  addLr,
+  getAlllr,
+  deleteLr,
+  updateLr
+};

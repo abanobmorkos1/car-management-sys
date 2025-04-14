@@ -6,4 +6,4 @@ const salespersonSchema = new mongoose.Schema({
   role: { type: String, required: true },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Salesperson', salespersonSchema);
+module.exports = mongoose.model('NewSalesperson', salespersonSchema);

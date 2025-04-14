@@ -4,7 +4,7 @@ const {
   getAllDeliveries,
   updateDelivery,
   deleteDelivery
-} = require('../controllers/deliveriescontroller');
+} = require('../Controllers/deliveriescontroller');
 
 const router = express.Router();
 

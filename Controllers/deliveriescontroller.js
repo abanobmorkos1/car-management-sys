@@ -1,3 +1,5 @@
+const Delivery = require('../Schema/deliveries');
+
 const createDelivery = async (req, res) => {
     try {
       const {
@@ -59,8 +61,8 @@ const deleteDelivery = async (req, res) => {
     }
   };
   
-module.exports = {
-    createDelivery,
+module.exports = 
+{    createDelivery,
     getAllDeliveries,
     updateDelivery,
     deleteDelivery};
