@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const connectDB = require('./Config/db');
+const authRoute = require('./Routes/auth');
+const cors = require('cors')
 //lease return routes
 const leaseRoutes = require('./Routes/lease');
 // Sales Routes
@@ -25,6 +27,7 @@ const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
+app.use(cors());
 
 // Lease return routes
 app.use('/lease', leaseRoutes);
@@ -37,6 +40,8 @@ app.use('/car', newCarRoutes);
 app.use('/newdelivery', deliveryRoutes);
 // COD Routes
 app.use('/cod', codRoutes);
+// auth Routes
+app.use('/api/auth', authRoute);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Lease Management API!');
