@@ -41,8 +41,14 @@ const leaseSchema = new mongoose.Schema({
   hasTitle: { type: Boolean, required: true, default: false },
   titlePicture: {
     type: String,
+    validate: {
+      validator: function (v) {
+        return /^https?:\/\/.+\.(jpg|jpeg|png|pdf|webp)$/i.test(v);
+      },
+      message: 'Invalid file URL format'
+    },
     required: [function () { return this.hasTitle; }, 'Title picture is required when hasTitle is true']
-  },
+  }
 }, { timestamps: true });
 
 // Method to update pickedDate

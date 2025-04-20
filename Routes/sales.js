@@ -1,19 +1,19 @@
-// const express = require('express');
-// const router = express.Router();
-// const  addSalesperson  = require('../Controllers/salescontroller');
+const express = require('express');
+const router = express.Router();
+const  addSalesperson  = require('../Controllers/salescontoller');
 
-// router.post('/salesperson', addSalesperson);
-// // Route to dynamically add salespeople
-// router.post('/salesperson', async (req, res) => {
-//   const { name, email, role } = req.body;
+router.post('/salesperson', addSalesperson);
+// Route to dynamically add salespeople
+router.post('/salesperson', async (req, res) => {
+  const { name, email, role } = req.body;
 
-//   try {
-//     const newSalesperson = new Salesperson({ name, email, role });
-//     await newSalesperson.save();
-//     res.status(201).json(newSalesperson);
-//   } catch (err) {
-//     res.status(400).json({ error: 'Failed to create salesperson' });
-//   }
-// });
+  try {
+    const newSalesperson = new Salesperson({ name, email, role });
+    await newSalesperson.save();
+    res.status(201).json(newSalesperson);
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to create salesperson' });
+  }
+});
 
-// module.exports = router;
+module.exports = router;

@@ -2,10 +2,7 @@ const express = require('express');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { S3Client } = require('@aws-sdk/client-s3');
-const verifyToken = require('../middleware/verifyToken'); // <- use your middleware
 require('dotenv').config();
-
-const router = express.Router();
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -15,8 +12,9 @@ const s3 = new S3Client({
   }
 });
 
-// ✅ Protected signed URL route
-router.get('/s3-url/:key(*)', verifyToken, async (req, res) => {
+const router = express.Router();
+
+router.get('/s3-url/:key(*)', async (req, res) => {
   try {
     const { key } = req.params;
 
@@ -30,7 +28,7 @@ router.get('/s3-url/:key(*)', verifyToken, async (req, res) => {
     res.json({ signedUrl });
   } catch (error) {
     console.error('Signed URL error:', error);
-    res.status(500).json({ error: 'Unable to generate signed URL' });
+    res.status(500).json({ error: 'Unable to generate signed view URL' });
   }
 });
 

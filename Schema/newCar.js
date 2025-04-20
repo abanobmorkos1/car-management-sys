@@ -5,7 +5,7 @@ const carSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
-  salespersonId: { type: Schema.Types.ObjectId, ref: 'Salesperson', required: true },
+  salesPersonid: { type: Schema.Types.ObjectId, ref: 'Salesperson', required: true },
   driver: { type: String, required: true },
   pickedDate: { type: Date, default: Date.now },
   damageReport: { type: String, default: 'No report' },
