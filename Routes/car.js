@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../Utils/aws');
-const { createNewCar , getAllNewCars } = require('../Controllers/newcarcontroller');
+const {
+  createNewCar,
+  getAllNewCars,
+  deleteNewCar,
+  updateNewCar
+} = require('../Controllers/newcarcontroller');
 const auth = require('../Middleware/auth');
 
 router.post(
@@ -14,6 +19,14 @@ router.post(
   ]),
   createNewCar
 );
+// ✅ GET all
+router.get('/all', getAllNewCars);
+
+// ✅ UPDATE car by ID
+router.put('/update/:id', updateNewCar);
+
+// ✅ DELETE car by ID
+router.delete('/delete/:id', deleteNewCar);
 
 router.get('/all',  getAllNewCars);
 
