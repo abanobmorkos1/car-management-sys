@@ -1,37 +1,43 @@
-const express = require('express');
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { S3Client } = require('@aws-sdk/client-s3');
-const verifyToken = require('../middleware/verifyToken'); // <- use your middleware
-require('dotenv').config();
+const jwt = require('jsonwebtoken');
 
-const router = express.Router();
-
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(403).json({ message: 'Token missing' });
   }
-});
 
-// ✅ Protected signed URL route
-router.get('/s3-url/:key(*)', verifyToken, async (req, res) => {
+  const token = authHeader.split(' ')[1];
+
   try {
-    const { key } = req.params;
-
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: key
-    });
-
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-
-    res.json({ signedUrl });
-  } catch (error) {
-    console.error('Signed URL error:', error);
-    res.status(500).json({ error: 'Unable to generate signed URL' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
   }
-});
+};
 
-module.exports = router;
+const requireRole = (role) => {
+  return (req, res, next) => {
+    if (req.user?.role !== role) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    next();
+  };
+};
+
+const requireRoles = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user?.role)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    next();
+  };
+};
+
+// ✅ export all
+module.exports = {
+  verifyToken,
+  requireRole,
+  requireRoles,
+};

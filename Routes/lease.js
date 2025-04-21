@@ -1,5 +1,5 @@
 const express = require('express');
-const { addLr, getAlllr, deleteLr , updateLr } = require('../Controllers/leasecontroller');
+const { addLr, getAlllr, deleteLr , updateLr , getLeaseByVin } = require('../Controllers/leasecontroller');
 const router = express.Router();
 const Car = require('../Schema/lease');
 const upload = require('../Utils/aws');
@@ -13,30 +13,54 @@ const getCarDetailsFromVin = async (vin) => {
       results.find((r) => r.Variable === label)?.Value?.trim() || null;
   
     return {
-      year: get('Model Year'),
-      make: get('Make'),
-      model: get('Model') || get('Series'),
-      trim: get('Trim') || get('Model Trim') || get('Base Trim'),
-      bodyStyle: get('Body Class'),
-      engine: get('Engine Model') || get('Engine Configuration'),
-      fuelType: get('Fuel Type - Primary'),
-      driveType: get('Drive Type'),
-      plant: get('Plant City'),
-      doors: parseInt(get('Doors')) || null,
-      transmission: get('Transmission Style')
-    };
-  };
+      vin,
+  year: parseInt(vinInfo.year),
+  make: vinInfo.make,
+  model: vinInfo.model,
+  trim: vinInfo.trim,
+  bodyStyle: vinInfo.bodyStyle,
+  engine: vinInfo.engine,
+  fuelType: vinInfo.fuelType,
+  driveType: vinInfo.driveType,
+  plant: vinInfo.plant,
+  doors: vinInfo.doors,
+  transmission: vinInfo.transmission,
+  miles,
+  bank,
+  customerName,
+  address,
+  salesPerson,
+  driver,
+  damageReport,
+  hasTitle: hasTitle === 'true',
+  titlePicture,
+  odometerPicture,           // ✅ MUST INCLUDE
+  damagePictures             // ✅ MUST INCLUDE
+}};
+  
   
 // Add a lease return
-router.post('/createlr', addLr);
+router.post(
+  '/createlr',
+  (req, res, next) => { req.uploadType = 'lease-returns'; next(); },
+  upload.fields([
+    { name: 'damagePictures', maxCount: 15 },
+    { name: 'odometer', maxCount: 1 },   // ✅ Required
+    { name: 'title', maxCount: 1 }       // Optional unless hasTitle = true
+  ]),
+  addLr
+);
 
 // Get all lease returns
 router.get('/getlr', getAlllr);
 
 // Delete a lease by ID
-router.delete('/deletelLr/:id', deleteLr);
+router.delete('/deleteLr/:id', deleteLr);
 
 // Update a lease by ID
 router.put('/updateLr/:id', updateLr);
+
+//  NEW: Search by VIN
+router.get('/by-vin/:vin', getLeaseByVin);
 
 module.exports = router;

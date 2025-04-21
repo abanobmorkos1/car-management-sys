@@ -1,16 +1,33 @@
+const aws = require('aws-sdk');
 const multer = require('multer');
+const multerS3 = require('multer-s3');
+const path = require('path'); // ✅ you also need this if you're using path.extname
 
-// Set storage engine
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // make sure this folder exists
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
-  },
+// Configure AWS SDK
+aws.config.update({
+  accessKeyId:     process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region:          process.env.AWS_REGION,
 });
 
-const upload = multer({ storage });
+const s3 = new aws.S3();
+
+const upload = multer({
+  storage: multerS3({
+    s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    acl: 'public-read', // or private if using signed URLs
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const base = path.basename(file.originalname, ext);
+      const folder = req.uploadType || 'misc'; // 🔥 dynamic folder
+      const filename = `${folder}/${Date.now()}-${base}${ext}`;
+      cb(null, filename);
+    }
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
+
 
 module.exports = upload;

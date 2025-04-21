@@ -32,13 +32,27 @@ const addLr = async (req, res) => {
   try {
     const {
       vin, miles, bank, customerName, address,
-      salesPerson, driver, damageReport, hasTitle, titlePicture
+      salesPerson, driver, damageReport, hasTitle
     } = req.body;
 
     const vinInfo = await getCarDetailsFromVin(vin);
 
     if (!vinInfo.make || !vinInfo.model || !vinInfo.year) {
       return res.status(400).json({ message: 'Unable to decode VIN' });
+    }
+
+    const damagePictures = req.files['damagePictures']?.map(file => file.location) || [];
+    const odometerPicture = req.files['odometer']?.[0]?.location || null;
+    const titlePicture = req.files['title']?.[0]?.location || null;
+
+    // ✅ Require odometer picture
+    if (!odometerPicture) {
+      return res.status(400).json({ message: 'Odometer picture is required' });
+    }
+
+    // ✅ Require title picture only if hasTitle is true
+    if (hasTitle === 'true' && !titlePicture) {
+      return res.status(400).json({ message: 'Title picture is required when hasTitle is true' });
     }
 
     const newLease = new Lease({
@@ -61,8 +75,10 @@ const addLr = async (req, res) => {
       salesPerson,
       driver,
       damageReport,
-      hasTitle,
-      titlePicture
+      hasTitle: hasTitle === 'true',
+      titlePicture,
+      odometerPicture,
+      damagePictures
     });
 
     const savedLease = await newLease.save();
@@ -95,7 +111,7 @@ const getAlllr = async (req, res) => {
 const deleteLr = async (req, res) => {
   try {
     const deletedCar = await Lease.findByIdAndDelete(req.params.id);
-    
+
     if (!deletedCar) {
       return res.status(404).json({ message: 'Lease not found' });
     }
@@ -123,10 +139,27 @@ const updateLr = async (req, res) => {
   }
 };
 
+const getLeaseByVin = async (req, res) => {
+  try {
+    const vin = req.params.vin.toUpperCase(); // Normalize VIN
+    const lease = await Lease.findOne({ vin });
+
+    if (!lease) {
+      return res.status(404).json({ message: 'No lease return found for this VIN' });
+    }
+
+    res.status(200).json(lease);
+  } catch (err) {
+    console.error('Error fetching lease by VIN:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 
 module.exports = {
   addLr,
   getAlllr,
   deleteLr,
-  updateLr
+  updateLr,
+  getLeaseByVin
 };

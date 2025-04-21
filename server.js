@@ -7,7 +7,7 @@ const connectDB = require('./Config/db');
 const authRoute = require('./Routes/auth');
 const cors = require('cors')
 //lease return routes
-const leaseRoutes = require('./Routes/lease');
+const leaseRoutes  = require('./Routes/lease');
 // Sales Routes
 const salesRoutes = require('./Routes/sales')
 // Generate URL Routes
@@ -30,6 +30,7 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
 
 // Lease return routes
@@ -45,7 +46,7 @@ app.use('/newdelivery', deliveryRoutes);
 // COD Routes
 app.use('/cod', codRoutes);
 // auth Routes
-app.use('/api/auth', require('./Routes/auth'));
+app.use('/api/auth', authRoute);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Lease Management API!');

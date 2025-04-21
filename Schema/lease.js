@@ -43,12 +43,13 @@ const leaseSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator: function (v) {
-        return /^https?:\/\/.+\.(jpg|jpeg|png|pdf|webp)$/i.test(v);
+        return !v || /^https?:\/\/.+\.(jpg|jpeg|png|pdf|webp)$/i.test(v);
       },
       message: 'Invalid file URL format'
     },
     required: [function () { return this.hasTitle; }, 'Title picture is required when hasTitle is true']
   }
+  
 }, { timestamps: true });
 
 // Method to update pickedDate
