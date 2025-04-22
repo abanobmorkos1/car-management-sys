@@ -28,11 +28,14 @@ const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
-app.use(cors({
-  origin: 'https://car-management-sys.onrender.com', // Replace with your frontend URL
-  credentials: true, // Allow cookies to be sent
 
+
+const allowedOrigins = 'https://car-management-sys.onrender.com'
+app.use(cors({
+  origin: allowedOrigins, // Replace with your frontend URL
+  credentials: true, // Allow cookies to be sent
 }));
+
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
