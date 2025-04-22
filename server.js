@@ -30,7 +30,11 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 
 
-const allowedOrigins = 'https://car-management-sys.onrender.com'
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://car-management-sys.onrender.com',
+];
+
 app.use(cors({
   origin: allowedOrigins, // Replace with your frontend URL
   credentials: true, // Allow cookies to be sent
