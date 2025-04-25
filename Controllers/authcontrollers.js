@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User'); // adjust path if different
 
 const registerUser = async (req, res) => {
+  console.log('📥 Received body:', req.body)
   const { name, email, password, role, inviteCode } = req.body;
 
   try {
@@ -44,7 +45,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
 
 
 
