@@ -8,8 +8,6 @@ const authRoute = require('./Routes/auth');
 const cors = require('cors')
 //lease return routes
 const leaseRoutes  = require('./Routes/lease');
-// Sales Routes
-const salesRoutes = require('./Routes/sales')
 // Generate URL Routes
 const generateURLRoutes = require('./Routes/generateURL');
 // New Car Routes
@@ -18,6 +16,10 @@ const newCarRoutes = require('./Routes/car');
 const deliveryRoutes = require('./Routes/deliveries');
 // cod routes
 const codRoutes = require('./Routes/cod');
+// User Routes for sales collection
+const salesRoutes = require('./Routes/sales');
+// User Routes for sales collection
+const userRoutes = require('./Routes/user');
 
 dotenv.config();
 connectDB();
@@ -58,10 +60,9 @@ app.use('/newdelivery', deliveryRoutes);
 app.use('/cod', codRoutes);
 // auth Routes
 app.use('/api/auth', authRoute);
+// User Routes for sales collection
+app.use('/api/users', userRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the Lease Management API!');
-});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

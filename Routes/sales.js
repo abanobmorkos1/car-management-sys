@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const  addSalesperson  = require('../Controllers/salescontoller');
 
-router.post('/salesperson', addSalesperson);
 // Route to dynamically add salespeople
 router.post('/salesperson', async (req, res) => {
   const { name, email, role } = req.body;

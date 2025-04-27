@@ -1,18 +1,22 @@
 const jwt = require('jsonwebtoken');
 
-const verifyToken = (req, res, next) => {
+const User = require('../Schema/user');
+
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(403).json({ message: 'Token missing' });
+    return res.status(401).json({ message: 'No token provided' });
   }
 
   const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // 🧠 adds user { id, role } to request
     next();
-  } catch (err) {
+  } catch (error) {
+    console.error('Token verification failed:', error);
     res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -26,18 +30,13 @@ const requireRole = (role) => {
   };
 };
 
-const requireRoles = (roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user?.role)) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    next();
-  };
-};
+
+
+
 
 // ✅ export all
 module.exports = {
   verifyToken,
   requireRole,
-  requireRoles,
+
 };

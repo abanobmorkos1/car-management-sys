@@ -1,14 +1,15 @@
 const COD = require('../Schema/cod');
+const { verifyToken } = require('../Middleware/auth');
+
 
 const createCOD = async (req, res) => {
   try {
-    const { customerName, phoneNumber, address, amount, method } = req.body;
+    const { customerName, phoneNumber, address, amount, method, salesperson, car } = req.body;
 
-    if (!req.files['contractPicture']) {
-      return res.status(400).json({ message: 'Contract picture is required' });
-    }
+    console.log('📥 Received form body:', req.body);
+    console.log('🖼️ Received files:', req.files);
 
-    const contractPicture = req.files['contractPicture'][0].location;
+    const contractPicture = req.files['contractPicture']?.[0]?.location || null;
     const checkPicture = req.files['checkPicture']?.[0]?.location || null;
 
     if (method === 'Check' && !checkPicture) {
@@ -22,15 +23,19 @@ const createCOD = async (req, res) => {
       amount,
       method,
       contractPicture,
-      checkPicture
+      checkPicture,
+      salesperson,
+      car,
     });
 
     const saved = await newCOD.save();
     res.status(201).json(saved);
   } catch (err) {
+    console.error('🔥 Error inside createCOD:', err);
     res.status(500).json({ message: 'Error saving COD', error: err.message });
   }
 };
+
 // Delete COD by ID
 const deleteCOD = async (req, res) => {
   try {
@@ -59,12 +64,16 @@ const updateCOD = async (req, res) => {
 
 const getAllCOD = async (req, res) => {
   try {
-    const cods = await COD.find().sort({ createdAt: -1 }); // newest first
+    const cods = await COD.find()
+      .populate('salesperson', 'name phoneNumber email')
+      .populate('driver', 'name phoneNumber') // <== HERE IS LIKELY THE PROBLEM
+      .sort({ createdAt: -1 });
     res.status(200).json(cods);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch CODs', error: err.message });
   }
 };
+
 
 // Search CODs by customer name (partial + case-insensitive)
 const searchCODByCustomer = async (req, res) => {

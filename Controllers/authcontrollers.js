@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const User = require('../Schema/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -17,9 +17,11 @@ const registerUser = async (req, res) => {
     }
 
     // Check if invite code matches
-    if (inviteCode !== process.env.INVITE_CODE) {
-      return res.status(400).json({ message: 'Invalid invite code' });
+    if (!inviteCode || inviteCode !== process.env.INVITE_CODE) {
+      console.log('❌ Invalid invite code:', inviteCode);
+      return res.status(403).json({ message: 'Invalid invite code' });
     }
+    
 
     // Check if user already exists
     const userExists = await User.findOne({ email });

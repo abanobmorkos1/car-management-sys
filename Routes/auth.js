@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../Schema/user');
+const { verifyToken } = require('../Middleware/auth');
 require('dotenv').config();
 
 router.post('/register', async (req, res) => {
@@ -61,6 +62,16 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('🔥 Login error:', error);
     res.status(500).json({ message: 'Login failed', error: error.message });
+  }
+});
+
+router.get('/all', verifyToken, async (req, res) => {
+  try {
+    const users = await User.find().select('name email phoneNumber role _id');
+    res.status(200).json(users);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ message: 'Failed to fetch users', error: err.message });
   }
 });
 
