@@ -9,7 +9,7 @@ require('dotenv').config();
 router.post('/register', async (req, res) => {
   console.log('🟢 REGISTER ROUTE HIT');
 
-  const { name, email, password, role, inviteCode } = req.body;
+  const { name, email, password, role, inviteCode, phoneNumber } = req.body; // ✅ also get phoneNumber from request
 
   if (inviteCode !== process.env.INVITE_CODE) {
     return res.status(403).json({ message: 'Invalid invite code' });
@@ -20,14 +20,22 @@ router.post('/register', async (req, res) => {
     if (existing) return res.status(400).json({ message: 'User already exists' });
 
     const hashed = await bcrypt.hash(password, 10);
-    console.log('🔐 Hashed password being saved:', hashed); // ✅ this confirms it
-    const user = await User.create({ name, email, password: hashed, role });
+    console.log('🔐 Hashed password being saved:', hashed);
+
+    const user = await User.create({
+      name,
+      email,
+      phoneNumber,      // ✅ save phoneNumber correctly
+      password: hashed, // ✅ save password hashed
+      role
+    });
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Registration error', error: err.message });
   }
 });
+
 
 
 router.post('/login', async (req, res) => {

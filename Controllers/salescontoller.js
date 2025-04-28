@@ -1,9 +1,9 @@
 const SalesPerson= require('../Schema/salesSchema')
 
 const addSalesperson = async (req, res) => {
-    const {name , email , role} = req.body;
+    const {name , email , role , phoneNumber} = req.body;
     try {
-        const salesperson = new SalesPerson({name , email, role});
+        const salesperson = new SalesPerson({name , email, role, phoneNumber});
         await salesperson.save();
         return res.status(201).json(salesperson);
     }

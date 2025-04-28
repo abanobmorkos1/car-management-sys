@@ -8,11 +8,11 @@ const User = require('../models/User'); // adjust path if different
 
 const registerUser = async (req, res) => {
   console.log('📥 Received body:', req.body)
-  const { name, email, password, role, inviteCode } = req.body;
+  const { name, email, password, role, inviteCode , phoneNumber } = req.body;
 
   try {
     // Check if all required fields are provided
-    if (!email || !password || !role || !inviteCode) {
+    if (!email || !password || !role || !inviteCode || !phoneNumber) {
       return res.status(400).json({ message: 'Please fill in all required fields' });
     }
 
@@ -38,6 +38,7 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      phoneNumber
     });
 
     res.status(201).json({ message: 'User registered successfully', user });

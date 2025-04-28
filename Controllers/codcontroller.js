@@ -4,7 +4,7 @@ const { verifyToken } = require('../Middleware/auth');
 
 const createCOD = async (req, res) => {
   try {
-    const { customerName, phoneNumber, address, amount, method, salesperson, car } = req.body;
+    const { customerName, phoneNumber, address, amount, method, salesperson, car , driver } = req.body;
 
     console.log('📥 Received form body:', req.body);
     console.log('🖼️ Received files:', req.files);
@@ -26,6 +26,7 @@ const createCOD = async (req, res) => {
       checkPicture,
       salesperson,
       car,
+      driver
     });
 
     const saved = await newCOD.save();
@@ -66,7 +67,7 @@ const getAllCOD = async (req, res) => {
   try {
     const cods = await COD.find()
       .populate('salesperson', 'name phoneNumber email')
-      .populate('driver', 'name phoneNumber') // <== HERE IS LIKELY THE PROBLEM
+      .populate('driver', 'name phoneNumber')
       .sort({ createdAt: -1 });
     res.status(200).json(cods);
   } catch (err) {
