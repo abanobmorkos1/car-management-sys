@@ -35,6 +35,7 @@ app.use(bodyParser.json());
 const allowedOrigins = [
   'http://localhost:3000', // Local development
   'https://car-management-sys.onrender.com',
+  'https://car-management-sys-fe.vercel.app/'
 ];
 
 app.use(cors({
