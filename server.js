@@ -32,15 +32,17 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 
 
+const FE= process.env.FE
+const BE= process.env.BE
+
 const allowedOrigins = [
-  'http://localhost:3000', // Local development
-  'https://car-management-sys.onrender.com',
-  'https://car-management-sys-fe.vercel.app/'
+  FE,
+  BE
 ];
 
 app.use(cors({
-  origin: allowedOrigins, // Replace with your frontend URL
-  credentials: true, // Allow cookies to be sent
+  origin: allowedOrigins, 
+  credentials: true, 
 }));
 
 app.use(cookieParser());
