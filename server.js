@@ -23,10 +23,9 @@ const app = express();
 
 //  Confirm .env loaded
 console.log('✅ FE Origin:', process.env.FE);
-console.log('✅ BE Origin:', process.env.BE);
 
 // Setup CORS with environment values
-const allowedOrigins = [process.env.FE, process.env.BE];
+const allowedOrigins = [process.env.FE];
 
 const corsOptions = {
   origin: function (origin, callback) {
