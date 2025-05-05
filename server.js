@@ -32,13 +32,9 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 
 
-const FE= process.env.FE
-const BE= process.env.BE
 
-const allowedOrigins = [
-  FE,
-  BE
-];
+
+const allowedOrigins  = [process.env.FE, process.env.BE];
 
 app.use(cors({
   origin: allowedOrigins, 
