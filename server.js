@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const connectDB = require('./Config/db');
 const driverController = require('./Controllers/Drivercontroller');
+const driverRoutes = require('./Routes/driver');
 
 // Routes
 const authRoute = require('./Routes/auth');
@@ -67,6 +68,7 @@ app.use('/sales', salesRoutes);
 app.use('/delivery', deliveryRoutes);
 app.use('/cod', codRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/driver', driverRoutes)
 
 
 
