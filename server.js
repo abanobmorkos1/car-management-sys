@@ -25,16 +25,20 @@ const app = express();
 console.log('✅ FE Origin:', process.env.FE);
 
 // Setup CORS with environment values
-const allowedOrigins = [process.env.FE];
+
+const allowedOrigins = [
+  'http://localhost:3000', // your React dev server
+  'https://car-management-sys-fe.vercel.app', // your Vercel frontend
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log('🔍 Incoming origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn('❌ Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+    console.warn('❌ Blocked by CORS:', origin);
+    return callback(new Error('CORS not allowed'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
