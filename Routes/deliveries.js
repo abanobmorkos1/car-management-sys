@@ -8,7 +8,7 @@ const {
 
 const router = express.Router();
 
-router.post('/delivery', createDelivery);             // Create
+router.post('/new', createDelivery);             // Create
 router.get('/deliveries', getAllDeliveries);          // Read all
 router.put('/delivery/:id', updateDelivery);          // Edit
 router.delete('/delivery/:id', deleteDelivery);       // Delete

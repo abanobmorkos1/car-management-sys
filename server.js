@@ -55,7 +55,7 @@ app.use('/car', newCarRoutes);
 // Sales Routes
 app.use('/sales', salesRoutes);
 // Delivery Routes
-app.use('/newdelivery', deliveryRoutes);
+app.use('/delivery', deliveryRoutes);
 // COD Routes
 app.use('/cod', codRoutes);
 // auth Routes

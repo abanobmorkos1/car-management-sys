@@ -3,8 +3,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // Register User
-const bcrypt = require('bcryptjs');
-const User = require('../models/User'); // adjust path if different
 
 const registerUser = async (req, res) => {
   console.log('📥 Received body:', req.body)
@@ -72,7 +70,7 @@ const loginUser = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, name: user.name, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );

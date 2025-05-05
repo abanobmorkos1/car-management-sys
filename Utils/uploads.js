@@ -16,7 +16,7 @@ const upload = multer({
   storage: multerS3({
     s3,
     bucket: process.env.AWS_BUCKET_NAME,
-    acl: 'public-read', // or private if using signed URLs
+    acl: 'private', // or private if using signed URLs
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = path.extname(file.originalname);
