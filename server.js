@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
@@ -5,6 +6,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const connectDB = require('./Config/db');
+const driverController = require('./Controllers/Drivercontroller');
 
 // Routes
 const authRoute = require('./Routes/auth');
@@ -16,7 +18,8 @@ const codRoutes = require('./Routes/cod');
 const salesRoutes = require('./Routes/sales');
 const userRoutes = require('./Routes/user');
 
-dotenv.config();
+
+
 connectDB();
 
 const app = express();
