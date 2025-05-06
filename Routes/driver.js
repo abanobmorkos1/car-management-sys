@@ -16,9 +16,10 @@ router.post(
   driverController.uploadBonus
 );
 
-// Clock in/out and bonus tracking
-router.post('/clockin', verifyToken, driverController.clockIn);
-router.put('/clockout', verifyToken, driverController.clockOut);
+router.get('/my-uploads', verifyToken, driverController.getMyUploads);
+
+
+
 router.get('/bonuses', verifyToken, driverController.getBonuses);
 
 module.exports = router;

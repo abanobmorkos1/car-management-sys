@@ -78,3 +78,13 @@ exports.uploadBonus = async (req, res) => {
     url: req.file.location
   });
 };
+
+exports.getMyUploads = async (req, res) => {
+    try {
+      const uploads = await BonusUpload.find({ driverId: req.user.id }).sort({ createdAt: -1 });
+      res.status(200).json(uploads);
+    } catch (err) {
+      console.error('Failed to get uploads:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  };

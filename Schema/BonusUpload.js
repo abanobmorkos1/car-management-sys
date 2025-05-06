@@ -18,7 +18,9 @@ const BonusUploadSchema = new mongoose.Schema({
   dateUploaded: {
     type: Date,
     default: Date.now
-  }
+  },
+
+
 });
 
 module.exports = mongoose.model('BonusUpload', BonusUploadSchema);
