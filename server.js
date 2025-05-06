@@ -1,12 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const connectDB = require('./Config/db');
-const driverController = require('./Controllers/Drivercontroller');
 const driverRoutes = require('./Routes/driver');
 
 // Routes
