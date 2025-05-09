@@ -2,7 +2,9 @@ const express = require('express');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { S3Client } = require('@aws-sdk/client-s3');
+const { verifyToken } = require('../Middleware/auth'); // ✅ Correct usage
 require('dotenv').config();
+
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -14,9 +16,9 @@ const s3 = new S3Client({
 
 const router = express.Router();
 
-router.get('/s3-url/:key(*)', async (req, res) => {
+router.get('/s3-url/:key(*)', verifyToken, async (req, res) => {
   try {
-    const { key } = req.params;
+    const key = decodeURIComponent(req.params.key);
 
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,

@@ -60,13 +60,13 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role , name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     console.log('🎫 Token issued for:', user.email);
-    res.status(200).json({ token, role: user.role });
+    res.status(200).json({ token, role: user.role , name: user.name });
   } catch (error) {
     console.error('🔥 Login error:', error);
     res.status(500).json({ message: 'Login failed', error: error.message });

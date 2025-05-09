@@ -11,6 +11,7 @@ const BonusUploadSchema = new mongoose.Schema({
     enum: ['review', 'customer'],
     required: true
   },
+  key: { type: String, required: true },
   imageUrl: {
     type: String,
     required: true

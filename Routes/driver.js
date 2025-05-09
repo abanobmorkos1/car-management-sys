@@ -1,25 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const driverController = require('../Controllers/Drivercontroller');
-const { verifyToken } = require('../Middleware/auth'); // ✅ Correct usage
-const upload = require('../Utils/uploads'); // ✅ multer instance
+const { verifyToken } = require('../Middleware/auth');
 
-// Upload review or customer bonus photo
-router.post(
-  '/upload-bonus',
-  verifyToken,
-  (req, res, next) => {
-    req.uploadType = 'bonuses';
-    next();
-  },
-  upload.single('image'),
-  driverController.uploadBonus
-);
+// 👉 NEW: Save S3 upload reference to DB after direct upload
+router.post('/save-upload', verifyToken, driverController.saveUpload);
 
+// 👉 STILL USED
 router.get('/my-uploads', verifyToken, driverController.getMyUploads);
-
-
-
+router.delete('/delete-upload/:id', verifyToken, driverController.deleteUpload);
 router.get('/bonuses', verifyToken, driverController.getBonuses);
 
 module.exports = router;

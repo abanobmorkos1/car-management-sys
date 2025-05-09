@@ -12,7 +12,7 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // 🧠 adds user { id, role } to request
     next();
   } catch (error) {
     console.error('Token verification failed:', error);
@@ -29,6 +29,7 @@ const requireRole = (role) => {
   };
 };
 
+// ✅ export all
 module.exports = {
   verifyToken,
   requireRole,
