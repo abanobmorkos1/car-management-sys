@@ -1,21 +1,27 @@
-const express = require("express");
 const Lease = require('../Schema/lease');
+const generateOdometerPDF = require('../Utils/generateOdometerPDF');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const fetch = require('node-fetch');
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  }
+});
 
 const getCarDetailsFromVin = async (vin) => {
   const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
   const data = await response.json();
   const results = data.Results;
-
-  // DEBUG LOG – this will show you all fields returned
-  // console.log('Decoded VIN Results:', JSON.stringify(results, null, 2));
-
   const get = (label) => results.find(r => r.Variable === label)?.Value?.trim() || null;
 
   return {
     year: get('Model Year'),
     make: get('Make'),
-    model: get('Model') || get('Series') || get('Vehicle Type'),
-    trim: get('Trim') || get('Series') || get('Model Trim') || get('Base Trim'),
+    model: get('Model') || get('Series'),
+    trim: get('Trim') || get('Series'),
     bodyStyle: get('Body Class'),
     engine: get('Engine Model') || get('Engine Configuration'),
     fuelType: get('Fuel Type - Primary'),
@@ -26,36 +32,70 @@ const getCarDetailsFromVin = async (vin) => {
   };
 };
 
-
-// Add a new lease return
 const addLr = async (req, res) => {
   try {
     const {
       vin, miles, bank, customerName, address,
-      salesPerson, driver, damageReport, hasTitle
+      salesPerson, driver, damageReport, hasTitle,
+      signatureBase64, city, state, zip, date
     } = req.body;
 
     const vinInfo = await getCarDetailsFromVin(vin);
-
     if (!vinInfo.make || !vinInfo.model || !vinInfo.year) {
       return res.status(400).json({ message: 'Unable to decode VIN' });
     }
 
-    const damagePictures = req.files['damagePictures']?.map(file => file.location) || [];
-    const odometerPicture = req.files['odometer']?.[0]?.location || null;
-    const titlePicture = req.files['title']?.[0]?.location || null;
+    const odometerFile = req.files['odometer']?.[0];
+    const titleFile = req.files['title']?.[0];
+    const damageImages = req.files['damagePictures'] || [];
+    const damageVideos = req.files['damageVideos'] || [];
 
-    // ✅ Require odometer picture
-    if (!odometerPicture) {
-      return res.status(400).json({ message: 'Odometer picture is required' });
+    if (!odometerFile) return res.status(400).json({ message: 'Odometer picture is required' });
+    if (hasTitle === 'true' && !titleFile) return res.status(400).json({ message: 'Title picture is required' });
+
+    let odometerPdfUrl = null;
+    let odometerPdfKey = null;
+    let documents = [];
+
+    if (signatureBase64) {
+      const pdfBuffer = await generateOdometerPDF({
+        customerName,
+        salesPerson,
+        address,
+        city,
+        state,
+        zip,
+        vin,
+        year: vinInfo.year,
+        make: vinInfo.make,
+        model: vinInfo.model,
+        bodyType: vinInfo.bodyStyle,
+        miles,
+        date,
+        signatureBase64
+      });
+
+      const filename = `customers/${customerName.replace(/\s+/g, '_')}/lease_returns/${Date.now()}_odometer.pdf`;
+
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: filename,
+        Body: Buffer.from(pdfBuffer),
+        ContentType: 'application/pdf'
+      }));
+
+      odometerPdfKey = filename;
+      odometerPdfUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
+
+      documents.push({
+        type: 'odometer_statement',
+        url: odometerPdfUrl,
+        key: odometerPdfKey,
+        uploadedAt: new Date()
+      });
     }
 
-    // ✅ Require title picture only if hasTitle is true
-    if (hasTitle === 'true' && !titlePicture) {
-      return res.status(400).json({ message: 'Title picture is required when hasTitle is true' });
-    }
-
-    const newLease = new Lease({
+    const lease = new Lease({
       vin,
       year: parseInt(vinInfo.year),
       make: vinInfo.make,
@@ -72,52 +112,69 @@ const addLr = async (req, res) => {
       bank,
       customerName,
       address,
+      city,
+      state,
+      zip,
       salesPerson,
       driver,
       damageReport,
       hasTitle: hasTitle === 'true',
-      titlePicture,
-      odometerPicture,
-      damagePictures
+      odometerPicture: odometerFile.location,
+      odometerKey: odometerFile.key,
+      titlePicture: titleFile?.location || null,
+      titleKey: titleFile?.key || null,
+      damagePictures: damageImages.map(f => f.location),
+      damageKeys: damageImages.map(f => f.key),
+      damageVideos: damageVideos.map(f => f.location),
+      damageVideoKeys: damageVideos.map(f => f.key),
+      odometerStatementUrl: odometerPdfUrl,
+      odometerStatementKey: odometerPdfKey,
+      documents
     });
 
-    const savedLease = await newLease.save();
-    res.status(201).json(savedLease);
+    const saved = await lease.save();
+    res.status(201).json(saved);
   } catch (err) {
-    console.error('Error creating lease:', err);
+    console.error('❌ Lease save error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// Get all lease returns
 const getAlllr = async (req, res) => {
   try {
-    const cars = await Lease.find({}); // Get all cars (or lease returns)
-
-    // Format the data by mapping over the cars
+    const cars = await Lease.find({});
     const formattedCars = cars.map(car => ({
-      ...car._doc,  // Spread the car object
-      createdAt: new Date(car.createdAt).toLocaleString(),    // Format the creation date
-      updatedAt: new Date(car.updatedAt).toLocaleString()     // Format the update date
+      ...car._doc,
+      createdAt: new Date(car.createdAt).toLocaleString(),
+      updatedAt: new Date(car.updatedAt).toLocaleString()
     }));
-
-    res.json(formattedCars);  // Send the formatted data as the response
+    res.json(formattedCars);
   } catch (error) {
     res.status(500).json({ message: 'Server error while fetching cars', error: error.message });
   }
 };
 
-// Delete a lease by ID
 const deleteLr = async (req, res) => {
   try {
-    const deletedCar = await Lease.findByIdAndDelete(req.params.id);
+    const lease = await Lease.findById(req.params.id);
+    if (!lease) return res.status(404).json({ message: 'Lease not found' });
 
-    if (!deletedCar) {
-      return res.status(404).json({ message: 'Lease not found' });
-    }
+    const allKeys = [
+      lease.odometerKey,
+      lease.titleKey,
+      ...(lease.damageKeys || []),
+      ...(lease.damageVideoKeys || []),
+      lease.odometerStatementKey
+    ].filter(Boolean);
 
+    await Promise.all(allKeys.map(key =>
+      s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME, Key: key }))
+    ));
+
+    await lease.deleteOne();
     res.status(200).json({ message: 'Lease deleted successfully' });
   } catch (error) {
+    console.error('Error deleting lease:', error);
     res.status(500).json({ message: 'Server error while deleting lease', error: error.message });
   }
 };
@@ -125,36 +182,27 @@ const deleteLr = async (req, res) => {
 const updateLr = async (req, res) => {
   try {
     const updatedCar = await Lease.findByIdAndUpdate(req.params.id, req.body, { new: true });
-
     if (!updatedCar) {
       return res.status(404).json({ message: 'Lease not found' });
     }
-
     res.status(200).json(updatedCar);
-
   } catch (error) {
-    console.error(error);
-
     res.status(500).json({ message: 'Server error while updating lease', error: error.message });
   }
 };
 
 const getLeaseByVin = async (req, res) => {
   try {
-    const vin = req.params.vin.toUpperCase(); // Normalize VIN
+    const vin = req.params.vin.toUpperCase();
     const lease = await Lease.findOne({ vin });
-
     if (!lease) {
       return res.status(404).json({ message: 'No lease return found for this VIN' });
     }
-
     res.status(200).json(lease);
   } catch (err) {
-    console.error('Error fetching lease by VIN:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
-
 
 module.exports = {
   addLr,

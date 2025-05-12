@@ -18,14 +18,13 @@ const codRoutes = require('./Routes/cod');
 const salesRoutes = require('./Routes/sales');
 const userRoutes = require('./Routes/user');
 const getImageUrlRoute = require('./Routes/generateURL');
+const s3Routes = require('./Routes/s3');
 
 
 
 connectDB();
 
 
-//  Confirm .env loaded
-// console.log('✅ FE Origin:', process.env.FE);
 
 // Setup CORS with environment values
 
@@ -68,6 +67,7 @@ app.use('/delivery', deliveryRoutes);
 app.use('/cod', codRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/driver', driverRoutes)
+app.use('/api', s3Routes)
 
 
 

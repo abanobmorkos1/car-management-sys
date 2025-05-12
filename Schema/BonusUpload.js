@@ -12,10 +12,7 @@ const BonusUploadSchema = new mongoose.Schema({
     required: true
   },
   key: { type: String, required: true },
-  imageUrl: {
-    type: String,
-    required: true
-  },
+
   dateUploaded: {
     type: Date,
     default: Date.now

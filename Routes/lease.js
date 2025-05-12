@@ -3,6 +3,7 @@ const { addLr, getAlllr, deleteLr , updateLr , getLeaseByVin } = require('../Con
 const router = express.Router();
 const Car = require('../Schema/lease');
 const upload = require('../Utils/aws');
+const { verifyToken } = require('../Middleware/auth');
 
 const getCarDetailsFromVin = async (vin) => {
     const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
@@ -42,11 +43,13 @@ const getCarDetailsFromVin = async (vin) => {
 // Add a lease return
 router.post(
   '/createlr',
-  (req, res, next) => { req.uploadType = 'lease-returns'; next(); },
+  verifyToken,
+  (req, res, next) => { req.uploadType = 'cars'; next(); },
   upload.fields([
-    { name: 'damagePictures', maxCount: 15 },
-    { name: 'odometer', maxCount: 1 },   // ✅ Required
-    { name: 'title', maxCount: 1 }       // Optional unless hasTitle = true
+    { name: 'odometer', maxCount: 1 },
+    { name: 'title', maxCount: 1 },
+    { name: 'damagePictures', maxCount: 10 },
+    { name: 'damageVideos', maxCount: 3 }
   ]),
   addLr
 );
