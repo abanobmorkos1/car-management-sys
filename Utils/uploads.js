@@ -26,7 +26,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   fileFilter,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit make larger if needed
   storage: multerS3({
     s3,
     bucket: process.env.AWS_BUCKET_NAME,

@@ -47,8 +47,14 @@ const addLr = async (req, res) => {
 
     const odometerFile = req.files['odometer']?.[0];
     const titleFile = req.files['title']?.[0];
-    const damageImages = req.files['damagePictures'] || [];
-    const damageVideos = req.files['damageVideos'] || [];
+    const leaseFiles = req.files['leaseReturnPictures'] || [];
+
+    const leaseReturnImages = leaseFiles.filter(file =>
+      file.mimetype.startsWith('image/')
+    );
+    const leaseReturnVideos = leaseFiles.filter(file =>
+      file.mimetype.startsWith('video/')
+    );
 
     if (!odometerFile) return res.status(400).json({ message: 'Odometer picture is required' });
     if (hasTitle === 'true' && !titleFile) return res.status(400).json({ message: 'Title picture is required' });
@@ -123,10 +129,10 @@ const addLr = async (req, res) => {
       odometerKey: odometerFile.key,
       titlePicture: titleFile?.location || null,
       titleKey: titleFile?.key || null,
-      damagePictures: damageImages.map(f => f.location),
-      damageKeys: damageImages.map(f => f.key),
-      damageVideos: damageVideos.map(f => f.location),
-      damageVideoKeys: damageVideos.map(f => f.key),
+      damagePictures: leaseReturnImages.map(f => f.location),
+      damageKeys: leaseReturnImages.map(f => f.key),
+      damageVideos: leaseReturnVideos.map(f => f.location),
+      damageVideoKeys: leaseReturnVideos.map(f => f.key),
       odometerStatementUrl: odometerPdfUrl,
       odometerStatementKey: odometerPdfKey,
       documents
@@ -139,6 +145,7 @@ const addLr = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
 
 const getAlllr = async (req, res) => {
   try {

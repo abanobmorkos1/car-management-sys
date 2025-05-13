@@ -38,12 +38,14 @@ const leaseSchema = new mongoose.Schema({
   titleKey: { type: String },
   odometerPicture: { type: String, required: true },
   odometerKey: { type: String },
-  damagePictures: { type: [String], default: [] },
-  damageKeys: { type: [String], default: [] },
-  damageVideos: { type: [String], default: [] },
-  damageVideoKeys: { type: [String], default: [] },
+
+  // ✅ Updated unified media fields
+  leaseReturnMedia: { type: [String], default: [] },      // URLs of pictures or videos
+  leaseReturnMediaKeys: { type: [String], default: [] },  // S3 keys for deletion
+
   odometerStatementUrl: { type: String },
   odometerStatementKey: { type: String },
+
   documents: [{
     type: { type: String, required: true },
     url: { type: String, required: true },
