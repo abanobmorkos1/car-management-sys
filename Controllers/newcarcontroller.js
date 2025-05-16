@@ -2,21 +2,10 @@ const Car = require('../Schema/newCar');
 
 const createNewCar = async (req, res) => {
   try {
-    console.log('BODY:', req.body);
-    console.log('FILES:', req.files);
-
     const {
-      make,
-      model,
-      year,
-      driver,
-      damageReport,
-      salesPersonid
+      make, model, year, driver, damageReport,
+      salesPersonid, pictureKeys = [], videoKey, driverIdPictureKey
     } = req.body;
-
-    const imageUrls = req.files['carImages']?.map(file => file.location) || [];
-    const videoUrl = req.files['carVideo']?.[0]?.location || null;
-    const driverIdPictureUrl = req.files['driverIdPicture']?.[0]?.location || null;
 
     const newCar = new Car({
       make,
@@ -25,9 +14,9 @@ const createNewCar = async (req, res) => {
       driver,
       salesPersonid,
       damageReport,
-      pictureUrls: imageUrls,
-      videoUrl,
-      driverIdPicture: driverIdPictureUrl
+      pictureUrls: pictureKeys,
+      videoUrl: videoKey,
+      driverIdPicture: driverIdPictureKey
     });
 
     const savedCar = await newCar.save();

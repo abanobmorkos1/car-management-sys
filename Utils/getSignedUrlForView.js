@@ -14,3 +14,4 @@ const getSignedUrlForView = (key) => {
 };
 
 module.exports = getSignedUrlForView;
+

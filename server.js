@@ -67,7 +67,7 @@ app.use('/delivery', deliveryRoutes);
 app.use('/cod', codRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/driver', driverRoutes)
-app.use('/api', s3Routes)
+app.use('/api/s3', s3Routes)
 
 
 

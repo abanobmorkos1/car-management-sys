@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../Utils/aws');
 const { verifyToken } = require('../Middleware/auth'); // Import your auth middleware
 
 const {
@@ -14,11 +13,6 @@ const {
 router.post(
   '/newcod',
   verifyToken,
-  (req, res, next) => { req.uploadType = 'cod'; next(); },
-  upload.fields([
-    { name: 'contractPicture', maxCount: 3 },
-    { name: 'checkPicture', maxCount: 1 }
-  ]),
   createCOD
 );
 

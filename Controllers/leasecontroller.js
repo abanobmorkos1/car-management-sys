@@ -1,5 +1,4 @@
 const Lease = require('../Schema/lease');
-const generateOdometerPDF = require('../Utils/generateOdometerPDF');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const fetch = require('node-fetch');
 
@@ -37,68 +36,13 @@ const addLr = async (req, res) => {
     const {
       vin, miles, bank, customerName, address,
       salesPerson, driver, damageReport, hasTitle,
-      signatureBase64, city, state, zip, date
+      city, state, zip, date,
+      odometerKey, titleKey, leaseReturnMediaKeys = []
     } = req.body;
 
     const vinInfo = await getCarDetailsFromVin(vin);
     if (!vinInfo.make || !vinInfo.model || !vinInfo.year) {
       return res.status(400).json({ message: 'Unable to decode VIN' });
-    }
-
-    const odometerFile = req.files['odometer']?.[0];
-    const titleFile = req.files['title']?.[0];
-    const leaseFiles = req.files['leaseReturnPictures'] || [];
-
-    const leaseReturnImages = leaseFiles.filter(file =>
-      file.mimetype.startsWith('image/')
-    );
-    const leaseReturnVideos = leaseFiles.filter(file =>
-      file.mimetype.startsWith('video/')
-    );
-
-    if (!odometerFile) return res.status(400).json({ message: 'Odometer picture is required' });
-    if (hasTitle === 'true' && !titleFile) return res.status(400).json({ message: 'Title picture is required' });
-
-    let odometerPdfUrl = null;
-    let odometerPdfKey = null;
-    let documents = [];
-
-    if (signatureBase64) {
-      const pdfBuffer = await generateOdometerPDF({
-        customerName,
-        salesPerson,
-        address,
-        city,
-        state,
-        zip,
-        vin,
-        year: vinInfo.year,
-        make: vinInfo.make,
-        model: vinInfo.model,
-        bodyType: vinInfo.bodyStyle,
-        miles,
-        date,
-        signatureBase64
-      });
-
-      const filename = `customers/${customerName.replace(/\s+/g, '_')}/lease_returns/${Date.now()}_odometer.pdf`;
-
-      await s3.send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: filename,
-        Body: Buffer.from(pdfBuffer),
-        ContentType: 'application/pdf'
-      }));
-
-      odometerPdfKey = filename;
-      odometerPdfUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
-
-      documents.push({
-        type: 'odometer_statement',
-        url: odometerPdfUrl,
-        key: odometerPdfKey,
-        uploadedAt: new Date()
-      });
     }
 
     const lease = new Lease({
@@ -125,17 +69,9 @@ const addLr = async (req, res) => {
       driver,
       damageReport,
       hasTitle: hasTitle === 'true',
-      odometerPicture: odometerFile.location,
-      odometerKey: odometerFile.key,
-      titlePicture: titleFile?.location || null,
-      titleKey: titleFile?.key || null,
-      damagePictures: leaseReturnImages.map(f => f.location),
-      damageKeys: leaseReturnImages.map(f => f.key),
-      damageVideos: leaseReturnVideos.map(f => f.location),
-      damageVideoKeys: leaseReturnVideos.map(f => f.key),
-      odometerStatementUrl: odometerPdfUrl,
-      odometerStatementKey: odometerPdfKey,
-      documents
+      odometerKey,
+      titleKey: hasTitle === 'true' ? titleKey : null,
+      leaseReturnMediaKeys: req.body.leaseReturnMediaKeys, // ✅ This works
     });
 
     const saved = await lease.save();
@@ -145,6 +81,7 @@ const addLr = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
 
 
 const getAlllr = async (req, res) => {

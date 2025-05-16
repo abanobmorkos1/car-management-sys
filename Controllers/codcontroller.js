@@ -4,15 +4,12 @@ const { verifyToken } = require('../Middleware/auth');
 
 const createCOD = async (req, res) => {
   try {
-    const { customerName, phoneNumber, address, amount, method, salesperson, car , driver } = req.body;
+    const {
+      customerName, phoneNumber, address, amount, method,
+      salesperson, car, driver, contractKey, checkKey
+    } = req.body;
 
-    console.log('📥 Received form body:', req.body);
-    console.log('🖼️ Received files:', req.files);
-
-    const contractPicture = req.files['contractPicture']?.[0]?.location || null;
-    const checkPicture = req.files['checkPicture']?.[0]?.location || null;
-
-    if (method === 'Check' && !checkPicture) {
+    if (method === 'Check' && !checkKey) {
       return res.status(400).json({ message: 'Check picture is required for Check payments' });
     }
 
@@ -22,8 +19,8 @@ const createCOD = async (req, res) => {
       address,
       amount,
       method,
-      contractPicture,
-      checkPicture,
+      contractKey,
+      checkKey: method === 'Check' ? checkKey : null,
       salesperson,
       car,
       driver

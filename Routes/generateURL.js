@@ -14,12 +14,13 @@ router.get('/get-image-url', verifyToken, async (req, res) => {
     const bonusFound = await BonusUpload.findOne({ key, driverId: req.user.id });
 
     const leaseFound = await LeaseReturns.findOne({
-      $or: [
-        { odometerKey: key },
-        { titleKey: key },
-        { damageKeys: key }
-      ]
-    });
+        $or: [
+          { odometerKey: key },
+          { titleKey: key },
+          { leaseReturnMediaKeys: key }, // ✅ this is your current array
+          { documents: { $elemMatch: { key } } } // also allow access to documents
+        ]
+      });
 
     // If the key is in BonusUpload (and belongs to driver) OR if it's part of any lease return
     if (!bonusFound && !leaseFound) {
