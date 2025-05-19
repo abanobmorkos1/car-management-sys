@@ -1,5 +1,5 @@
 const express = require('express');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand , GetObjectCommand   } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { verifyToken } = require('../Middleware/auth');
 
@@ -17,7 +17,7 @@ const s3 = new S3Client({
 const getFolderPath = (category, meta, user) => {
   switch (category) {
     case 'new-car':
-      return `cars/${meta.year}-${meta.make}-${meta.salesPerson}`;
+      return `cars/${meta.year}-${meta.make}-${meta.model}/${meta.salesPerson}/${meta.driver || 'unknown-driver'}`;
     case 'lease-return':
       return `lease-returns/${meta.customerName}`;
     case 'cod':
@@ -54,6 +54,26 @@ router.post('/generate-url', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('❌ Failed to generate signed upload URL:', err);
     res.status(500).json({ error: 'Failed to generate upload URL' });
+  }
+});
+
+router.get('/signed-url', verifyToken, async (req, res) => {
+  const { key } = req.query;
+  if (!key) {
+    return res.status(400).json({ error: 'Missing key' });
+  }
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key
+    });
+
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 min
+    res.json({ url: signedUrl });
+  } catch (err) {
+    console.error('❌ Failed to generate signed GET URL:', err);
+    res.status(500).json({ error: 'Failed to generate signed GET URL' });
   }
 });
 

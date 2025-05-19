@@ -11,7 +11,6 @@ const app = express();
 // Routes
 const authRoute = require('./Routes/auth');
 const leaseRoutes = require('./Routes/lease');
-const generateURLRoutes = require('./Routes/generateURL');
 const newCarRoutes = require('./Routes/car'); 
 const deliveryRoutes = require('./Routes/deliveries');
 const codRoutes = require('./Routes/cod');
@@ -61,9 +60,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', getImageUrlRoute);
 app.use('/api/auth', authRoute);
 app.use('/lease', leaseRoutes);
-app.use('/car', newCarRoutes);
 app.use('/sales', salesRoutes);
-app.use('/delivery', deliveryRoutes);
+app.use('/api/car', newCarRoutes);
+app.use('/api/delivery', deliveryRoutes);
 app.use('/cod', codRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/driver', driverRoutes)

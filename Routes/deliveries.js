@@ -1,4 +1,6 @@
 const express = require('express');
+const { verifyToken } = require('../Middleware/auth'); // Import your auth middleware
+
 const {
   createDelivery,
   getAllDeliveries,
@@ -8,9 +10,9 @@ const {
 
 const router = express.Router();
 
-router.post('/new', createDelivery);             // Create
-router.get('/deliveries', getAllDeliveries);          // Read all
-router.put('/delivery/:id', updateDelivery);          // Edit
-router.delete('/delivery/:id', deleteDelivery);       // Delete
+router.post('/', verifyToken ,createDelivery);             // Create
+router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
+router.put('/delivery/:id',verifyToken, updateDelivery);          // Edit
+router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 
 module.exports = router;

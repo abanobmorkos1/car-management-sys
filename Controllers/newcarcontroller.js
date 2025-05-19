@@ -1,81 +1,103 @@
-const Car = require('../Schema/newCar');
+const NewCar = require('../Schema/newCar');
+const fetch = require('node-fetch');
 
-const createNewCar = async (req, res) => {
+const decodeVIN = async (vin) => {
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+  const data = await res.json();
+  const get = (label) => data.Results.find(r => r.Variable === label)?.Value?.trim() || '';
+
+  return {
+    make: get('Make'),
+    model: get('Model'),
+    trim: get('Trim'),
+    year: get('Model Year')
+  };
+};
+
+// POST /api/car
+const createCar = async (req, res) => {
   try {
-    const {
-      make, model, year, driver, damageReport,
-      salesPersonid, pictureKeys = [], videoKey, driverIdPictureKey
-    } = req.body;
+    const { vin, salesPerson, driver, damageReport, pictureUrls, videoUrl, driverIdPicture } = req.body;
+    const decoded = await decodeVIN(vin);
 
-    const newCar = new Car({
-      make,
-      model,
-      year: parseInt(year),
+    console.log('📥 Incoming body:', req.body)
+
+    const car = new NewCar({
+      make: decoded.make,
+      model: decoded.model,
+      year: parseInt(decoded.year),
+      salesPerson,
       driver,
-      salesPersonid,
       damageReport,
-      pictureUrls: pictureKeys,
-      videoUrl: videoKey,
-      driverIdPicture: driverIdPictureKey
+      pictureUrls,
+      videoUrl,
+      driverIdPicture
     });
 
-    const savedCar = await newCar.save();
-    res.status(201).json(savedCar);
+    const saved = await car.save();
+    res.status(201).json(saved);
   } catch (err) {
-    console.error('🔥 SERVER ERROR:', err);
-    res.status(500).json({
-      error: 'Failed to create car',
-      message: err.message,
-      stack: err.stack
-    });
+    console.error('❌ Failed to create car:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-const getAllNewCars = async (req, res) => {
+// GET all
+const getCarById = async (req, res) => {
   try {
-    const cars = await Car.find().populate('salesPersonid', 'name email');
+    const car = await NewCar.findById(req.params.id)
+      .populate('driver', 'name')         // populate 'name' from driver
+      .populate('salesPerson', 'name'); // populate 'name' from salesPersonid
 
-    const formattedCars = cars.map(car => ({
-      ...car._doc,
-      createdAt: new Date(car.createdAt).toLocaleString(),
-      updatedAt: new Date(car.updatedAt).toLocaleString()
-    }));
-
-    res.status(200).json(formattedCars);
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    res.json(car);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch cars', message: err.message });
+    res.status(500).json({ message: 'Failed to fetch car', error: err.message });
   }
 };
 
-  // ✅ DELETE car by ID
-const deleteNewCar = async (req, res) => {
+
+// GET by ID
+const getAllCars = async (req, res) => {
   try {
-    const deleted = await Car.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: 'Car not found' });
-    }
-    res.status(200).json({ message: 'Car deleted successfully' });
+    const cars = await NewCar.find()
+      .populate('driver', 'name')
+      .populate('salesPerson', 'name');
+
+    res.json(cars); // ✅ Must return an array
   } catch (err) {
-    res.status(500).json({ message: 'Failed to delete car', error: err.message });
+    console.error('❌ Failed to fetch cars:', err);
+    res.status(500).json({ message: 'Failed to fetch cars', error: err.message });
   }
 };
 
-// ✅ UPDATE car by ID
-const updateNewCar = async (req, res) => {
+
+// PUT update
+const updateCar = async (req, res) => {
   try {
-    const updated = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) {
-      return res.status(404).json({ message: 'Car not found' });
-    }
-    res.status(200).json(updated);
+    const car = await NewCar.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    res.json(car);
   } catch (err) {
     res.status(500).json({ message: 'Failed to update car', error: err.message });
   }
 };
 
+// DELETE
+const deleteCar = async (req, res) => {
+  try {
+    const car = await NewCar.findByIdAndDelete(req.params.id);
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete car', error: err.message });
+  }
+};
+
 module.exports = {
-  createNewCar,
-  getAllNewCars,
-  deleteNewCar,
-  updateNewCar
+  createCar,
+  getAllCars,
+  getCarById,
+  updateCar,
+  deleteCar
 };

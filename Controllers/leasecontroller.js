@@ -36,8 +36,8 @@ const addLr = async (req, res) => {
     const {
       vin, miles, bank, customerName, address,
       salesPerson, driver, damageReport, hasTitle,
-      city, state, zip, date,
-      odometerKey, titleKey, leaseReturnMediaKeys = []
+      city, state, zip,
+      odometerKey, titleKey, odometerStatementKey, leaseReturnMediaKeys = []
     } = req.body;
 
     const vinInfo = await getCarDetailsFromVin(vin);
@@ -46,33 +46,34 @@ const addLr = async (req, res) => {
     }
 
     const lease = new Lease({
-      vin,
-      year: parseInt(vinInfo.year),
-      make: vinInfo.make,
-      model: vinInfo.model,
-      trim: vinInfo.trim,
-      bodyStyle: vinInfo.bodyStyle,
-      engine: vinInfo.engine,
-      fuelType: vinInfo.fuelType,
-      driveType: vinInfo.driveType,
-      plant: vinInfo.plant,
-      doors: vinInfo.doors,
-      transmission: vinInfo.transmission,
-      miles,
-      bank,
-      customerName,
-      address,
-      city,
-      state,
-      zip,
-      salesPerson,
-      driver,
-      damageReport,
-      hasTitle: hasTitle === 'true',
-      odometerKey,
-      titleKey: hasTitle === 'true' ? titleKey : null,
-      leaseReturnMediaKeys: req.body.leaseReturnMediaKeys, // ✅ This works
-    });
+  vin,
+  year: parseInt(vinInfo.year),
+  make: vinInfo.make,
+  model: vinInfo.model,
+  trim: vinInfo.trim,
+  bodyStyle: vinInfo.bodyStyle,
+  engine: vinInfo.engine,
+  fuelType: vinInfo.fuelType,
+  driveType: vinInfo.driveType,
+  plant: vinInfo.plant,
+  doors: vinInfo.doors,
+  transmission: vinInfo.transmission,
+  miles,
+  bank,
+  customerName,
+  address,
+  city,
+  state,
+  zip,
+  salesPerson,
+  driver,
+  damageReport,
+  hasTitle: hasTitle === 'true',
+  odometerKey,
+  titleKey: hasTitle === 'true' ? titleKey : null,
+  odometerStatementKey, // ✅ ADD THIS
+  leaseReturnMediaKeys
+});
 
     const saved = await lease.save();
     res.status(201).json(saved);
@@ -86,12 +87,18 @@ const addLr = async (req, res) => {
 
 const getAlllr = async (req, res) => {
   try {
-    const cars = await Lease.find({});
+    const cars = await Lease.find({})
+      .populate('salesPerson', 'name email') // only pull name/email
+      .populate('driver', 'name ');
+
     const formattedCars = cars.map(car => ({
       ...car._doc,
+      salesPerson: car.salesPerson?.name || car.salesPerson?._id,
+      driver: car.driver?.name || car.driver?._id,
       createdAt: new Date(car.createdAt).toLocaleString(),
       updatedAt: new Date(car.updatedAt).toLocaleString()
     }));
+
     res.json(formattedCars);
   } catch (error) {
     res.status(500).json({ message: 'Server error while fetching cars', error: error.message });

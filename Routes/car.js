@@ -1,29 +1,19 @@
 const express = require('express');
-const router = express.Router();
-const {
-  createNewCar,
-  getAllNewCars,
-  deleteNewCar,
-  updateNewCar
-} = require('../Controllers/newcarcontroller');
 const { verifyToken } = require('../Middleware/auth');
+const {
+  createCar,
+  getAllCars,
+  getCarById,
+  updateCar,
+  deleteCar
+} = require('../Controllers/newcarcontroller');
 
+const router = express.Router();
 
-router.post(
-  '/new-car',
-  verifyToken,
-  createNewCar
-);
-// ✅ GET all
-router.get('/all', getAllNewCars);
-
-// ✅ UPDATE car by ID
-router.put('/update/:id', updateNewCar);
-
-// ✅ DELETE car by ID
-router.delete('/delete/:id', deleteNewCar);
-
-router.get('/all',  getAllNewCars);
-
+router.post('/', verifyToken, createCar);
+router.get('/', verifyToken, getAllCars);
+router.get('/:id', verifyToken, getCarById);
+router.put('/:id', verifyToken, updateCar);
+router.delete('/:id', verifyToken, deleteCar);
 
 module.exports = router;
