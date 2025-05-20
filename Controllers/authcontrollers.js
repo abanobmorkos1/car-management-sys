@@ -10,7 +10,7 @@ const registerUser = async (req, res) => {
 
   try {
     // Check if all required fields are provided
-    if (!email || !password || !role || !inviteCode || !phoneNumber) {
+    if (!name ||!email || !password || !role || !inviteCode || !phoneNumber) {
       return res.status(400).json({ message: 'Please fill in all required fields' });
     }
 
@@ -83,4 +83,13 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+const getDrivers = async (req, res) => {
+  try {
+    const drivers = await User.find({ role: 'Driver' }).select('_id name');
+    res.json(drivers);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch drivers' });
+  }
+};
+
+module.exports = { registerUser, loginUser , getDrivers };

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   phoneNumber: { type: String, required: true }, // ⭐️ Added properly
   password: { type: String, required: true },
-  role: { type: String, enum: ['Driver', 'Sales'], required: true },
+  role: { type: String, enum: ['Driver', 'Sales','Management','Owner'], required: true },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   createdAt: { type: Date, default: Date.now }

@@ -5,11 +5,12 @@ const {
   createDelivery,
   getAllDeliveries,
   updateDelivery,
-  deleteDelivery
+  deleteDelivery,
+  assignDriver
 } = require('../Controllers/deliveriescontroller');
 
 const router = express.Router();
-
+router.put('/assign-driver/:id', verifyToken, assignDriver);
 router.post('/', verifyToken ,createDelivery);             // Create
 router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
 router.put('/delivery/:id',verifyToken, updateDelivery);          // Edit

@@ -4,16 +4,16 @@ const deliverySchema = new mongoose.Schema({
   customerName: { type: String, required: true },
   phoneNumber: { type: String, required: true },
   address: { type: String, required: true },
-  pickupFrom: { type: String, required: true }, // ✅ NEW FIELD
+  pickupFrom: { type: String, required: true },
   salesperson: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   driver: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+},
   deliveryDate: { type: Date, required: true },
   codAmount: { type: Number, required: true },
   codCollected: { type: Boolean, default: false },
@@ -28,7 +28,19 @@ const deliverySchema = new mongoose.Schema({
   make: { type: String },
   model: { type: String },
   trim: { type: String },
-  color: { type: String }
+  color: { type: String },
+  year: { type: String },
+  status: {
+    type: String,
+    enum: [
+      'Pending',
+      'In Route for Pick Up',
+      'Waiting for Paperwork',
+      'Heading to Customer',
+      'Delivered'
+    ],
+    default: 'Pending'
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Delivery', deliverySchema);

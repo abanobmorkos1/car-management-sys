@@ -18,6 +18,8 @@ const salesRoutes = require('./Routes/sales');
 const userRoutes = require('./Routes/user');
 const getImageUrlRoute = require('./Routes/generateURL');
 const s3Routes = require('./Routes/s3');
+const driverHoursRoutes = require('./Routes/hours')
+const ownerRoutes = require('./Routes/owner');
 
 
 
@@ -67,6 +69,9 @@ app.use('/cod', codRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/driver', driverRoutes)
 app.use('/api/s3', s3Routes)
+app.use('/api/hours', driverHoursRoutes);
+app.use('/api/owner', ownerRoutes);
+
 
 
 

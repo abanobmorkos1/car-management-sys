@@ -62,7 +62,6 @@ exports.getMyUploads = async (req, res) => {
   }
 };
 
-// 🗑️ Delete from S3 and DB
 // 🗑️ Delete from S3 and DB (Safe)
 exports.deleteUpload = async (req, res) => {
   try {

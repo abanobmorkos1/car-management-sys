@@ -6,10 +6,13 @@ const codSchema = new mongoose.Schema({
   address: { type: String, required: true },
   amount: { type: Number, default: 0 }, // allow zero if no COD collected
   method: {
-    type: String,
-    enum: ['Cash', 'Zelle', 'Check', 'None'], // added 'None'
-    default: 'None'
-  },
+  type: String,
+  enum: ['Cash', 'Zelle', 'Check', 'None'],
+  default: 'None',
+  required: function () {
+    return this.amount > 0;
+  }
+},
   contractPicture: { type: String }, // not required anymore
   checkPicture: { type: String },
 
