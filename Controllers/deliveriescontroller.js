@@ -13,16 +13,26 @@ try {
 
 const getAllDeliveries = async (req, res) => {
   try {
-    const deliveries = await Delivery.find()
-      .sort({ createdAt: -1 })
-      .populate({ path: 'driver', select: 'name email', strictPopulate: false }); // ✅ Fix: populate driver details
+    let deliveries;
 
-    res.status(200).json(deliveries);
+    if (req.user.role === 'Driver') {
+      deliveries = await Delivery.find({ driver: req.user.id })
+        .populate('driver', 'name')
+        .sort({ deliveryDate: -1 });
+    } else {
+      // ✅ For Management, Sales, Owner — return all
+      deliveries = await Delivery.find()
+        .populate('driver', 'name')
+        .sort({ deliveryDate: -1 });
+    }
+
+    res.json(deliveries);
   } catch (err) {
-    console.error('❌ getAllDeliveries error:', err);
-    res.status(500).json({ message: 'Error fetching deliveries', error: err.message });
+    console.error('❌ Error fetching deliveries:', err);
+    res.status(500).json({ message: 'Failed to fetch deliveries' });
   }
 };
+
 
 const updateDelivery = async (req, res) => {
   try {
