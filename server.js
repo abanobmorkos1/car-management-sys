@@ -21,21 +21,25 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps, curl, postman)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow server-to-server, curl, Postman
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.error(`❌ Blocked by CORS: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
 }));
+
 // ✅ Middlewares
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', 1);
 
 // ✅ Session setup after CORS + body parsing
 app.use(session({
