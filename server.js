@@ -16,7 +16,7 @@ connectDB();
 // ✅ CORS before everything
 const allowedOrigins = [
   'http://localhost:3000',               // local dev
-  'https://car-management-sys-fe.vercel.app/', 
+  'https://car-management-sys-fe.vercel.app', 
   'https://car-management-sys.onrender.com'
 ];
 
