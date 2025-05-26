@@ -1,88 +1,83 @@
 const User = require('../Schema/user');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Register User
-
+// Register
 const registerUser = async (req, res) => {
-  console.log('📥 Received body:', req.body)
-  const { name, email, password, role, inviteCode , phoneNumber } = req.body;
+  const { name, email, password, role, inviteCode, phoneNumber } = req.body;
 
-  try {
-    // Check if all required fields are provided
-    if (!name ||!email || !password || !role || !inviteCode || !phoneNumber) {
-      return res.status(400).json({ message: 'Please fill in all required fields' });
-    }
-
-    // Check if invite code matches
-    if (!inviteCode || inviteCode !== process.env.INVITE_CODE) {
-      console.log('❌ Invalid invite code:', inviteCode);
-      return res.status(403).json({ message: 'Invalid invite code' });
-    }
-    
-
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      phoneNumber
-    });
-
-    res.status(201).json({ message: 'User registered successfully', user });
-  } catch (error) {
-    console.error(error); // Always log errors for debugging
-    res.status(500).json({ message: 'Server Error' });
+  if (!name || !email || !password || !role || !inviteCode || !phoneNumber) {
+    return res.status(400).json({ message: 'Please fill in all required fields' });
   }
+
+  if (inviteCode !== process.env.INVITE_CODE) {
+    return res.status(403).json({ message: 'Invalid invite code' });
+  }
+
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return res.status(400).json({ message: 'User already exists' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await User.create({ name, email, password: hashedPassword, role, phoneNumber });
+
+  res.status(201).json({ message: 'User registered successfully', user });
 };
 
-
-
-
-// Login User
+// Login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
 
-    console.log('➡️ Login attempt for:', email);
-    if (!user) {
-      console.log('❌ User not found');
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
 
-    console.log('🧾 Stored password:', user.password);
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log('🔐 Password match:', isMatch);
+  // ✅ Store user info in session
+  req.session.user = {
+    id: user._id,
+    name: user.name,
+    role: user.role,
+  };
 
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
 
-    const token = jwt.sign(
-      { id: user._id, name: user.name, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+  res.json({ message: 'Logged in successfully', user: req.session.user });
+};
 
-    console.log('✅ Token generated');
-    res.status(200).json({ token, role: user.role , name: user.name});
-  } catch (err) {
-    console.error('🔥 Login error:', err);
-    res.status(500).json({ message: 'Server error' });
+// Logout
+const logout = async (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        console.error('❌ Error destroying session:', err);
+        return res.status(500).json({ message: 'Could not log out' });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: 'Logged out successfully' });
+    });
+  } else {
+    res.status(200).json({ message: 'Already logged out' });
   }
 };
 
+// Check session (for frontend use)
+const checkSession = (req, res) => {
+  if (req.session?.user) {
+    const { id, name, role } = req.session.user;
+
+    return res.json({
+      user: {
+        _id: id,      // ✅ This is the fix
+        name,
+        role
+      }
+    });
+  }
+
+  res.status(401).json({ message: 'Not authenticated' });
+};
+
+// Get Drivers
 const getDrivers = async (req, res) => {
   try {
     const drivers = await User.find({ role: 'Driver' }).select('_id name');
@@ -92,4 +87,35 @@ const getDrivers = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser , getDrivers };
+const refreshToken = async (req, res) => {
+  if (!req.session?.user) {
+    return res.status(401).json({ message: 'No session found' });
+  }
+
+  // Optional: log it for debugging
+  console.log('🔁 Session refresh requested for:', req.session.user);
+
+  const user = await User.findById(req.session.user.id);
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Create new short-lived access token (optional if you want JWT)
+  const accessToken = {
+    id: user._id,
+    name: user.name,
+    role: user.role
+  };
+
+  return res.json({ accessToken });
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  logout,
+  getDrivers,
+  checkSession,
+  refreshToken
+};

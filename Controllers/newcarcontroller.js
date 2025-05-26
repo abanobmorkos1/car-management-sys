@@ -20,7 +20,6 @@ const createCar = async (req, res) => {
     const { vin, salesPerson, driver, damageReport, pictureUrls, videoUrl, driverIdPicture } = req.body;
     const decoded = await decodeVIN(vin);
 
-    console.log('📥 Incoming body:', req.body)
 
     const car = new NewCar({
       make: decoded.make,

@@ -13,7 +13,7 @@ const router = express.Router();
 router.put('/assign-driver/:id', verifyToken, assignDriver);
 router.post('/', verifyToken ,createDelivery);             // Create
 router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
-router.put('/delivery/:id',verifyToken, updateDelivery);          // Edit
-router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
+router.put('/status/:id', verifyToken, updateDelivery); // Edit
+// router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 
 module.exports = router;

@@ -1,15 +1,12 @@
 const DriverHours = require('../Schema/DriverHour');
 const moment = require('moment');
 
-// Get all clock-in/out sessions for today
 exports.getTodaySessions = async (req, res) => {
-  const todayStart = moment().startOf('day').toDate();
-  const todayEnd = moment().endOf('day').toDate();
+  const today = moment().format('YYYY-MM-DD');
 
   try {
-    // Optionally filter by driver ID if provided (for future use)
     const query = {
-      date: { $gte: todayStart, $lte: todayEnd }
+      date: today
     };
 
     const sessions = await DriverHours.find(query)
@@ -20,29 +17,32 @@ exports.getTodaySessions = async (req, res) => {
     const grouped = {};
 
     sessions.forEach(session => {
-  const id = session.driver._id;
-  if (!grouped[id]) {
-    grouped[id] = {
-      driver: session.driver,
-      totalHours: 0,
-      sessions: []
-    };
-  }
+      const id = session.driver._id;
+      if (!grouped[id]) {
+        grouped[id] = {
+          driver: session.driver,
+          totalHours: 0,
+          sessions: []
+        };
+      }
 
-        const calcHours = session.clockIn && session.clockOut
-          ? (new Date(session.clockOut) - new Date(session.clockIn)) / 3600000
-          : 0;
+      const hasClockOut = session.clockIn && session.clockOut;
+      const calcHours = hasClockOut
+        ? (new Date(session.clockOut) - new Date(session.clockIn)) / 3600000
+        : 0;
 
-        grouped[id].sessions.push({
-          _id: session._id,
-          clockIn: session.clockIn,
-          clockOut: session.clockOut,
-          totalHours: +(session.totalHours ?? calcHours).toFixed(2)
-        });
-
-        grouped[id].totalHours += +(session.totalHours ?? calcHours);
+      grouped[id].sessions.push({
+        _id: session._id,
+        clockIn: session.clockIn,
+        clockOut: session.clockOut,
+        totalHours: hasClockOut ? +calcHours.toFixed(2) : 0
       });
-      
+
+      if (hasClockOut) {
+        grouped[id].totalHours += +calcHours;
+      }
+    });
+
     res.json(Object.values(grouped));
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch today\'s sessions', error: err });

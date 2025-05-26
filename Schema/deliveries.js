@@ -30,16 +30,18 @@ const deliverySchema = new mongoose.Schema({
   trim: { type: String },
   color: { type: String },
   year: { type: String },
+  leaseReturn: {
+  type: Boolean,
+  default: false
+},
   status: {
     type: String,
     enum: [
-      'Pending',
       'In Route for Pick Up',
       'Waiting for Paperwork',
       'Heading to Customer',
       'Delivered'
     ],
-    default: 'Pending'
   }
 }, { timestamps: true });
 

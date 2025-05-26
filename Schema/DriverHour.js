@@ -23,6 +23,15 @@ const driverHoursSchema = new mongoose.Schema({
   },
   weekStart: {
     type: String // e.g. 2025-05-16 (Friday of the week)
+  },
+  confirmed: {
+  type: Boolean,
+  default: false
+},
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   }
 }, { timestamps: true });
 

@@ -1,36 +1,23 @@
-const jwt = require('jsonwebtoken');
-const User = require('../Schema/user');
+const verifyToken = (req, res, next) => {
 
-const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
+  if (req.session && req.session.user) {
+    req.user = req.session.user; // attach session user to request
+    return next();
   }
 
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // 🧠 adds user { id, role } to request
-    next();
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    res.status(401).json({ message: 'Invalid token' });
-  }
+  return res.status(401).json({ message: 'Unauthorized - Session required' });
 };
 
 const requireRole = (role) => {
   return (req, res, next) => {
-    if (req.user?.role !== role) {
-      return res.status(403).json({ message: 'Access denied' });
+    if (!req.session?.user || req.session.user.role !== role) {
+      return res.status(403).json({ message: 'Forbidden - Role required' });
     }
     next();
   };
 };
 
-// ✅ export all
 module.exports = {
-  verifyToken,
-  requireRole,
+  verifyToken,   // ✅ same name, different logic
+  requireRole
 };

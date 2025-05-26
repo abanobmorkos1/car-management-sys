@@ -5,32 +5,52 @@ const { verifyToken } = require('../Middleware/auth');
 const createCOD = async (req, res) => {
   try {
     const {
-      customerName, phoneNumber, address, amount, method,
-      salesperson, car, driver, contractKey, checkKey
-    } = req.body;
-
-    if (method === 'Check' && !checkKey) {
-      return res.status(400).json({ message: 'Check picture is required for Check payments' });
-    }
-
-    const newCOD = new COD({
       customerName,
       phoneNumber,
       address,
       amount,
       method,
       contractKey,
-      checkKey: method === 'Check' ? checkKey : null,
+      checkKey,
       salesperson,
+      driver,
       car,
-      driver
+      delivery
+    } = req.body;
+
+    if (!salesperson || !driver) {
+      return res.status(400).json({ message: 'Salesperson and driver are required.' });
+    }
+
+    if (!delivery) {
+      return res.status(400).json({ message: 'Delivery reference is required.' });
+    }
+
+    const cod = new COD({
+      customerName,
+      phoneNumber,
+      address,
+      amount: amount || 0,
+      method: amount > 0 ? method : 'None',
+      contractPicture: contractKey || '',
+      checkPicture: checkKey || '',
+      salesperson,
+      driver,
+      delivery,
+      car: {
+        year: car?.year || '',
+        make: car?.make || '',
+        model: car?.model || '',
+        trim: car?.trim || '',
+        color: car?.color || ''
+      }
     });
 
-    const saved = await newCOD.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    console.error('🔥 Error inside createCOD:', err);
-    res.status(500).json({ message: 'Error saving COD', error: err.message });
+    await cod.save();
+    res.status(201).json(cod);
+  } catch (error) {
+    console.error('🔥 Error inside createCOD:', error);
+    res.status(500).json({ message: 'Failed to create COD', error: error.message });
   }
 };
 

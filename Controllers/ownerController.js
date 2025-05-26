@@ -16,7 +16,6 @@ exports.getOwnerStats = async (req, res) => {
   try {
     const allDeliveries = await Delivery.find();
 
-    // 📊 Filter helpers
     const filterDeliveries = (from) =>
       allDeliveries.filter(d => moment(d.deliveryDate).isSameOrAfter(from));
 
@@ -35,11 +34,11 @@ exports.getOwnerStats = async (req, res) => {
         )
       : [];
 
-    // 🧠 Top performers
     const selected = customDeliveries.length ? customDeliveries : allDeliveries;
 
     const driverCounts = {};
-    const salespersonSums = {};
+    const salespersonCounts = {};
+    const salespersonCarMap = {};
 
     for (const d of selected) {
       const driverId = d.driver?._id?.toString();
@@ -48,8 +47,18 @@ exports.getOwnerStats = async (req, res) => {
       }
 
       const salespersonId = d.salesperson?._id?.toString();
-      if (salespersonId && d.codCollected) {
-        salespersonSums[salespersonId] = (salespersonSums[salespersonId] || 0) + Number(d.codAmount || 0);
+      if (salespersonId) {
+        salespersonCounts[salespersonId] = (salespersonCounts[salespersonId] || 0) + 1;
+
+        const make = d.make || 'Unknown';
+        const model = d.model || '';
+        const key = `${make} ${model}`.trim();
+
+        if (!salespersonCarMap[salespersonId]) {
+          salespersonCarMap[salespersonId] = {};
+        }
+
+        salespersonCarMap[salespersonId][key] = (salespersonCarMap[salespersonId][key] || 0) + 1;
       }
     }
 
@@ -61,11 +70,16 @@ exports.getOwnerStats = async (req, res) => {
       totalDeliveries: driverCounts[d._id.toString()] || 0
     })).sort((a, b) => b.totalDeliveries - a.totalDeliveries).slice(0, 5);
 
-    const topSalespeople = salespeople.map(s => ({
-      name: s.name,
-      totalCOD: salespersonSums[s._id.toString()] || 0
-    })).sort((a, b) => b.totalCOD - a.totalCOD).slice(0, 5);
-
+    const topSalespeople = salespeople.map(s => {
+      const id = s._id.toString();
+      return {
+        name: s.name,
+        totalDeliveries: salespersonCounts[id] || 0,
+        carsByMakeModel: salespersonCarMap[id] || {}
+      };
+    }).sort((a, b) => b.totalDeliveries - a.totalDeliveries).slice(0, 5);
+    
+    
     res.json({
       deliveriesToday: deliveriesToday.length,
       deliveriesWeek: deliveriesWeek.length,

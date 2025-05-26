@@ -1,82 +1,79 @@
 require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
-const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const connectDB = require('./Config/db');
 const driverRoutes = require('./Routes/driver');
+
 const app = express();
 
-// Routes
-const authRoute = require('./Routes/auth');
-const leaseRoutes = require('./Routes/lease');
-const newCarRoutes = require('./Routes/car'); 
-const deliveryRoutes = require('./Routes/deliveries');
-const codRoutes = require('./Routes/cod');
-const salesRoutes = require('./Routes/sales');
-const userRoutes = require('./Routes/user');
-const getImageUrlRoute = require('./Routes/generateURL');
-const s3Routes = require('./Routes/s3');
-const driverHoursRoutes = require('./Routes/hours')
-const ownerRoutes = require('./Routes/owner');
-
-
-
+// 🧠 MongoDB connection
 connectDB();
 
-
-
-// Setup CORS with environment values
-
+// ✅ CORS before everything
 const allowedOrigins = [
-  'http://localhost:3000', // your React dev server
-  'https://car-management-sys-fe.vercel.app', 
-  'https://car-management-sys-gvd2beueg-abanobmorkos1s-projects.vercel.app'// your Vercel frontend 
+  'http://localhost:3000',               // local dev
+  'https://your-frontend.onrender.com'   // render frontend URL (replace with yours)
 ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    console.log(' Incoming origin:', origin);
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, postman)
     if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    console.warn(' Blocked by CORS:', origin);
-    return callback(new Error('CORS not allowed'));
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // for preflight
-
-// Middleware
+  credentials: true
+}));
+// ✅ Middlewares
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-//  Routes
-app.use('/api', getImageUrlRoute);
-app.use('/api/auth', authRoute);
-app.use('/lease', leaseRoutes);
-app.use('/sales', salesRoutes);
-app.use('/api/car', newCarRoutes);
-app.use('/api/delivery', deliveryRoutes);
-app.use('/cod', codRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/driver', driverRoutes)
-app.use('/api/s3', s3Routes)
-app.use('/api/hours', driverHoursRoutes);
-app.use('/api/owner', ownerRoutes);
+
+// ✅ Session setup after CORS + body parsing
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'mysecret',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions',
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // true on HTTPS (Render)
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
+}));
+
+// 🔗 Routes
+app.use('/api', require('./Routes/generateURL'));
+app.use('/api/auth', require('./Routes/auth'));
+app.use('/lease', require('./Routes/lease'));
+app.use('/sales', require('./Routes/sales'));
+app.use('/api/car', require('./Routes/car'));
+app.use('/api/delivery', require('./Routes/deliveries'));
+app.use('/cod', require('./Routes/cod'));
+app.use('/api/users', require('./Routes/user'));
+app.use('/api/driver', driverRoutes);
+app.use('/api/s3', require('./Routes/s3'));
+app.use('/api/hours/driver', require('./Routes/driverHoursRoutes'));
+app.use('/api/hours/manager-owner', require('./Routes/managerHoursRoutes'));
 
 
+// 🔍 Debug Session Route
+app.get('/api/debug-session', (req, res) => {
+  console.log('🧪 Session content:', req.session);
+  res.json({ session: req.session });
+});
 
-
-//  server
+// 🚀 Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
-
-// git log -1 --pretty=%B 
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
