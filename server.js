@@ -39,7 +39,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set('trust proxy', 1);
+// app.set('trust proxy', 1);
 
 // ✅ Session setup after CORS + body parsing
 app.use(session({
@@ -52,9 +52,9 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // true on HTTPS (Render)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    secure: false, // ⬅️ must be FALSE in development
+    sameSite: 'lax', // ⬅️ must be 'lax' in development
+    maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
 

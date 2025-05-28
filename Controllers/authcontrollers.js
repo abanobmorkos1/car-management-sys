@@ -26,22 +26,28 @@ const registerUser = async (req, res) => {
 
 // Login
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
+  try {
+    const { email, password } = req.body;
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ message: 'Invalid email or password' });
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // ✅ Set the session
+    req.session.user = {
+      id: user._id,
+      name: user.name,
+      role: user.role
+    };
+
+    console.log('✅ Session after login:', req.session); // 👀 You should now see .user
+
+    res.json({ message: 'Logged in successfully', user: req.session.user });
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    res.status(500).json({ message: 'Server error during login' });
   }
-
-  // ✅ Store user info in session
-  req.session.user = {
-    id: user._id,
-    name: user.name,
-    role: user.role,
-  };
-
-
-  res.json({ message: 'Logged in successfully', user: req.session.user });
 };
 
 // Logout
@@ -62,16 +68,12 @@ const logout = async (req, res) => {
 
 // Check session (for frontend use)
 const checkSession = (req, res) => {
+  console.log('👀 Session ID:', req.sessionID);
+  console.log('📦 Session:', req.session);
+
   if (req.session?.user) {
     const { id, name, role } = req.session.user;
-
-    return res.json({
-      user: {
-        _id: id,      // ✅ This is the fix
-        name,
-        role
-      }
-    });
+    return res.json({ user: { _id: id, name, role } });
   }
 
   res.status(401).json({ message: 'Not authenticated' });
@@ -87,29 +89,7 @@ const getDrivers = async (req, res) => {
   }
 };
 
-const refreshToken = async (req, res) => {
-  if (!req.session?.user) {
-    return res.status(401).json({ message: 'No session found' });
-  }
 
-  // Optional: log it for debugging
-  console.log('🔁 Session refresh requested for:', req.session.user);
-
-  const user = await User.findById(req.session.user.id);
-
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
-  }
-
-  // Create new short-lived access token (optional if you want JWT)
-  const accessToken = {
-    id: user._id,
-    name: user.name,
-    role: user.role
-  };
-
-  return res.json({ accessToken });
-};
 
 module.exports = {
   registerUser,
@@ -117,5 +97,4 @@ module.exports = {
   logout,
   getDrivers,
   checkSession,
-  refreshToken
 };

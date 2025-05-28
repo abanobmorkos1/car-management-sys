@@ -22,17 +22,16 @@ const getAllDeliveries = async (req, res) => {
 
     console.log("📥 Incoming query:", { from, to });
     
-    if (req.user.role === 'Driver') {
+    if (req.session?.user?.role === 'Driver') {
       filter.$or = [
         { driver: null },
-        { driver: req.user.id }
+        { driver: req.session.user.id }
       ];
     }
     // 🔒 Sales: show only their deliveries
-    if (req.user.role === 'Sales') {
-      filter.salesperson = req.user.id;
-    }
-
+      if (req.session?.user?.role === 'Sales') {
+        filter.salesperson = req.session.user.id;
+      }
     // 📆 Optional date filtering
     if (from && to) {
       const start = new Date(from);

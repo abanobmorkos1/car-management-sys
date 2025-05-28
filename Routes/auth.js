@@ -6,7 +6,6 @@ const {
   logout,
   getDrivers,
   checkSession,
-  refreshToken 
 } = require('../Controllers/authcontrollers');
 
 // @route   POST /api/auth/register
@@ -18,8 +17,6 @@ router.post('/login', loginUser);
 // @route   POST /api/auth/logout
 router.post('/logout', logout);
 
-// @route   POST /api/auth/refresh-token 
-router.post('/refresh-token', refreshToken);
 
 // @route   GET /api/auth/session
 router.get('/sessions', checkSession);

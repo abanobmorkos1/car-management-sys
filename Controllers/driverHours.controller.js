@@ -1,7 +1,7 @@
 const DriverHours = require('../Schema/DriverHour');
 const moment = require('moment');
 const Upload = require('../Schema/BonusUpload');
-const { getWeekStart } = require('../Utils/dateUtils');
+const { getWeekStart , getWeekRange} = require('../Utils/dateUtils');
 
 
 
@@ -36,7 +36,8 @@ exports.clockIn = async (req, res) => {
 
 exports.requestClockIn = async (req, res) => {
   const { id: driverId } = req.user;
-  const weekStart = getWeekStart(new Date());
+  const now = new Date();
+  const weekStart = getWeekStart(now);
 
   try {
     const existing = await DriverHours.findOne({
@@ -51,15 +52,17 @@ exports.requestClockIn = async (req, res) => {
 
     const entry = new DriverHours({
       driver: driverId,
-      date: moment().format('YYYY-MM-DD'),
-      clockIn: new Date(),
+      date: moment(now).format('YYYY-MM-DD'),
+      clockIn: now,
       weekStart,
       status: 'pending'
     });
 
     await entry.save();
+    console.log('📅 Clock-in submitted with weekStart:', weekStart);
     res.status(201).json({ message: 'Clock-in request submitted', entry });
   } catch (err) {
+    console.error('❌ Clock-in request failed:', err);
     res.status(500).json({ message: 'Failed to request clock-in', error: err });
   }
 };
@@ -128,7 +131,7 @@ exports.clockOut = async (req, res) => {
     await session.save();
 
     console.log(`🕒 Driver ${driverId} clocked out | Duration: ${durationMinutes} min | $${earnings} earned`);
-
+    console.log(`✅ Saved session earnings: $${session.earnings}`);
     res.status(200).json({
       message: 'Successfully clocked out',
       clockIn: session.clockIn,
@@ -144,30 +147,34 @@ exports.clockOut = async (req, res) => {
 
 exports.getWeeklyEarnings = async (req, res) => {
   const { id: driverId, role } = req.user;
-  const weekStart = getWeekStart(new Date());
+  const { start, end } = getWeekRange(new Date());
 
   try {
-    const filter = { weekStart };
+    const sessionFilter = {
+      clockIn: { $gte: moment(start).startOf('day').toDate(), $lte: moment(end).endOf('day').toDate() }
+    };
+    const uploadFilter = {
+      createdAt: { $gte: moment(start).startOf('day').toDate(), $lte: moment(end).endOf('day').toDate() }
+    };
 
-    // If the user is a driver, only show their own data
     if (role === 'Driver') {
-      filter.driver = driverId;
+      sessionFilter.driver = driverId;
+      uploadFilter.driver = driverId;
     }
 
-    const sessions = await DriverHours.find(filter);
-    const uploads = await Upload.find({
-      driver: role === 'Driver' ? driverId : { $exists: true },
-      createdAt: { $gte: weekStart }
-    });
+    const [sessions, uploads] = await Promise.all([
+      DriverHours.find(sessionFilter),
+      Upload.find(uploadFilter)
+    ]);
 
-    const totalHours = sessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60;
-    const baseEarnings = parseFloat((totalHours * 17).toFixed(2));
+    const totalMinutes = sessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+    const totalHours = totalMinutes / 60;
+    const baseEarnings = +(totalHours * 17).toFixed(2);
 
     const reviewPhotos = uploads.filter(u => u.type === 'review').length;
     const customerPhotos = uploads.filter(u => u.type === 'customer').length;
     const bonus = (reviewPhotos * 20) + (customerPhotos * 5);
-
-    const total = parseFloat((baseEarnings + bonus).toFixed(2));
+    const total = +(baseEarnings + bonus).toFixed(2);
 
     res.json({
       totalHours: totalHours.toFixed(2),
@@ -182,29 +189,35 @@ exports.getWeeklyEarnings = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch weekly earnings', error: err.message });
   }
 };
+
 exports.getWeeklyBreakdown = async (req, res) => {
   const { id: driverId } = req.user;
-  const weekStart = getWeekStart(new Date());
+  const { start, end } = getWeekRange(new Date());
 
   try {
     const sessions = await DriverHours.find({
       driver: driverId,
-      weekStart
+      clockIn: {
+        $gte: moment(start).startOf('day').toDate(),
+        $lte: moment(end).endOf('day').toDate()
+      }
     });
 
     const uploads = await Upload.find({
       driver: driverId,
-      createdAt: { $gte: weekStart }
+      createdAt: {
+        $gte: moment(start).startOf('day').toDate(),
+        $lte: moment(end).endOf('day').toDate()
+      }
     });
 
     const dailyMap = {};
 
-    // Aggregate session earnings by date
     for (const session of sessions) {
-      const date = moment(session.date).format('YYYY-MM-DD');
-      if (!dailyMap[date]) {
-        dailyMap[date] = {
-          date,
+      const dateKey = moment(session.clockIn).format('YYYY-MM-DD');
+      if (!dailyMap[dateKey]) {
+        dailyMap[dateKey] = {
+          date: dateKey,
           totalMinutes: 0,
           baseEarnings: 0,
           reviewPhotos: 0,
@@ -214,16 +227,17 @@ exports.getWeeklyBreakdown = async (req, res) => {
         };
       }
 
-      dailyMap[date].totalMinutes += session.duration || 0;
-      dailyMap[date].baseEarnings += session.earnings || 0;
+      const fallbackEarnings = +(17 * (session.duration || 0) / 60).toFixed(2);
+
+      dailyMap[dateKey].totalMinutes += session.duration || 0;
+      dailyMap[dateKey].baseEarnings += session.earnings > 0 ? session.earnings : fallbackEarnings;
     }
 
-    // Add bonus info by date
     for (const upload of uploads) {
-      const date = moment(upload.createdAt).format('YYYY-MM-DD');
-      if (!dailyMap[date]) {
-        dailyMap[date] = {
-          date,
+      const dateKey = moment(upload.date || upload.createdAt).format('YYYY-MM-DD');
+      if (!dailyMap[dateKey]) {
+        dailyMap[dateKey] = {
+          date: dateKey,
           totalMinutes: 0,
           baseEarnings: 0,
           reviewPhotos: 0,
@@ -234,17 +248,14 @@ exports.getWeeklyBreakdown = async (req, res) => {
       }
 
       if (upload.type === 'review') {
-        dailyMap[date].reviewPhotos += 1;
-        dailyMap[date].bonus += 20;
-      }
-
-      if (upload.type === 'customer') {
-        dailyMap[date].customerPhotos += 1;
-        dailyMap[date].bonus += 5;
+        dailyMap[dateKey].reviewPhotos += 1;
+        dailyMap[dateKey].bonus += 20;
+      } else if (upload.type === 'customer') {
+        dailyMap[dateKey].customerPhotos += 1;
+        dailyMap[dateKey].bonus += 5;
       }
     }
 
-    // Final totalEarnings per day
     const dailyBreakdown = Object.values(dailyMap).map(day => ({
       ...day,
       totalHours: +(day.totalMinutes / 60).toFixed(2),
