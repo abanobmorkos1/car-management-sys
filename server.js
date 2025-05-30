@@ -51,10 +51,10 @@ app.use(session({
     collectionName: 'sessions',
   }),
   cookie: {
-    httpOnly: true,
-    secure: true,      // false in dev
-    sameSite: 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production', // this ensures cookies work locally
+  sameSite: 'none',
+  maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
 
