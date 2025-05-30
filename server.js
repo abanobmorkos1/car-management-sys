@@ -13,19 +13,17 @@ const app = express();
 // 🧠 MongoDB connection
 connectDB();
 
-// ✅ CORS before everything
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://car-management-sys-fe.vercel.app',
-  'https://car-management-sys-fe-git-main-abanobmorkos1s-projects.vercel.app',
-  'https://car-management-sys.onrender.com',
-  'https://car-management-sys-90qnsx9mj-abanobmorkos1s-projects.vercel.app'
-];
+
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+
+    const isLocalhost = origin.startsWith('http://localhost');
+    const isRender = origin === 'https://car-management-sys.onrender.com';
+    const isVercelPreview = origin.endsWith('.vercel.app');
+
+    if (isLocalhost || isRender || isVercelPreview) {
       return callback(null, true);
     } else {
       console.error(`❌ Blocked by CORS: ${origin}`);
