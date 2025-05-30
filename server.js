@@ -15,15 +15,14 @@ connectDB();
 
 // ✅ CORS before everything
 const allowedOrigins = [
-  'http://localhost:3000',               // local dev
-  'https://car-management-sys-fe.vercel.app', 
+  'http://localhost:3000',
+  'https://car-management-sys-fe.vercel.app',
   'https://car-management-sys.onrender.com'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow server-to-server, curl, Postman
-
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
@@ -39,9 +38,8 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.set('trust proxy', 1);
 
-// ✅ Session setup after CORS + body parsing
+// ✅ Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
   resave: false,
@@ -52,11 +50,17 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,
-    secure: false, // ⬅️ must be FALSE in development
-    sameSite: 'lax', // ⬅️ must be 'lax' in development
+    secure: false,      // false in dev
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
+
+// 🛑 Prevent caching ONLY for the auth check route
+app.use('/api/auth/sessions', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 
 // 🔗 Routes
 app.use('/api', require('./Routes/generateURL'));
@@ -71,7 +75,6 @@ app.use('/api/driver', driverRoutes);
 app.use('/api/s3', require('./Routes/s3'));
 app.use('/api/hours/driver', require('./Routes/driverHoursRoutes'));
 app.use('/api/hours/manager-owner', require('./Routes/managerHoursRoutes'));
-
 
 // 🔍 Debug Session Route
 app.get('/api/debug-session', (req, res) => {

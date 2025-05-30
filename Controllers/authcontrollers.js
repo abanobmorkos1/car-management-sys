@@ -34,21 +34,34 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // ✅ Set the session
-    req.session.user = {
-      id: user._id,
-      name: user.name,
-      role: user.role
-    };
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('❌ Session regeneration error:', err);
+        return res.status(500).json({ message: 'Failed to regenerate session' });
+      }
 
-    console.log('✅ Session after login:', req.session); // 👀 You should now see .user
+      req.session.user = {
+        id: user._id,
+        name: user.name,
+        role: user.role
+      };
 
-    res.json({ message: 'Logged in successfully', user: req.session.user });
+      req.session.save((err) => {
+        if (err) {
+          console.error('❌ Session save error:', err);
+          return res.status(500).json({ message: 'Failed to save session' });
+        }
+
+        console.log('✅ Session after login:', req.session);
+        res.json({ message: 'Logged in successfully', user: req.session.user });
+      });
+    });
   } catch (err) {
     console.error('❌ Login error:', err);
     res.status(500).json({ message: 'Server error during login' });
   }
 };
+
 
 // Logout
 const logout = async (req, res) => {
@@ -66,7 +79,7 @@ const logout = async (req, res) => {
   }
 };
 
-// Check session (for frontend use)
+// Session check
 const checkSession = (req, res) => {
   console.log('👀 Session ID:', req.sessionID);
   console.log('📦 Session:', req.session);
@@ -79,7 +92,7 @@ const checkSession = (req, res) => {
   res.status(401).json({ message: 'Not authenticated' });
 };
 
-// Get Drivers
+// Get all Drivers
 const getDrivers = async (req, res) => {
   try {
     const drivers = await User.find({ role: 'Driver' }).select('_id name');
@@ -89,12 +102,10 @@ const getDrivers = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   registerUser,
   loginUser,
   logout,
-  getDrivers,
   checkSession,
+  getDrivers
 };
