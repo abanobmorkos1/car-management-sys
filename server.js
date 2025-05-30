@@ -17,6 +17,8 @@ connectDB();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://car-management-sys-fe.vercel.app',
+  'https://car-management-sys-fe-git-main-abanobmorkos1s-projects.vercel.app',
+  'https://car-management-sys-c0fgcut9j-abanobmorkos1s-projects.vercel.app',
   'https://car-management-sys.onrender.com'
 ];
 
