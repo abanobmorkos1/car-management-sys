@@ -50,8 +50,8 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,
-    secure: false,      // false in dev
-    sameSite: 'lax',
+    secure: true,      // false in dev
+    sameSite: 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
