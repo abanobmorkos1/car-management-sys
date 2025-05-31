@@ -16,18 +16,6 @@ router.post(
   createCOD
 );
 
-router.get('/by-delivery/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const cod = await COD.findOne({ delivery: id }); // 🔍 looks by delivery ID
-    if (!cod) return res.status(404).json({ message: 'COD not found for this delivery' });
-
-    res.json(cod);
-  } catch (err) {
-    console.error('❌ Error fetching COD:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
 
 // Delete COD

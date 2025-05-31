@@ -3,6 +3,7 @@ const { S3Client, PutObjectCommand , GetObjectCommand   } = require('@aws-sdk/cl
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { verifyToken } = require('../Middleware/auth');
 
+
 const router = express.Router();
 
 const s3 = new S3Client({
@@ -76,5 +77,37 @@ router.get('/signed-url', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to generate signed GET URL' });
   }
 });
+
+router.post('/bonus/upload', verifyToken, async (req, res) => {
+  const { type, key } = req.body;
+
+  if (!type || !['review', 'customer'].includes(type) || !key) {
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+
+  try {
+    const bonus = await BonusUpload.create({
+      user: req.user.id,
+      type,
+      key
+    });
+
+    res.status(201).json(bonus);
+  } catch (err) {
+    console.error('❌ Error saving bonus upload:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/bonus/my-uploads', verifyToken, async (req, res) => {
+  try {
+    const uploads = await BonusUpload.find({ user: req.user.id });
+    res.json(uploads);
+  } catch (err) {
+    console.error('❌ Error fetching uploads:', err);
+    res.status(500).json({ error: 'Failed to fetch bonus uploads' });
+  }
+});
+
 
 module.exports = router;

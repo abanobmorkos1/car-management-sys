@@ -80,8 +80,17 @@ const updateDelivery = async (req, res) => {
       return res.status(404).json({ message: 'Delivery not found' });
     }
 
-    if (userRole !== 'Driver' || delivery.driver?.toString() !== userId) {
-      return res.status(403).json({ message: 'Only the assigned driver can update delivery status' });
+    // Null safety check
+    if (!userId || !userRole) {
+      return res.status(401).json({ message: 'Unauthorized - Missing user context' });
+    }
+
+    // Permission check: Only assigned driver or management (if assigned) can update
+    if (
+      !(userRole === 'Driver' && delivery.driver?.toString() === userId) &&
+      !(userRole === 'Management' && delivery.driver?.toString() === userId)
+    ) {
+      return res.status(403).json({ message: 'Only the assigned driver or management can update delivery status' });
     }
 
     console.log('📝 Status change:', {
@@ -93,50 +102,16 @@ const updateDelivery = async (req, res) => {
     delivery.status = req.body.status;
     await delivery.save();
 
+    // ✅ If Delivered, redirect to COD form for contract upload
     if (req.body.status === 'Delivered' && prevStatus !== 'Delivered') {
       const codExists = await COD.findOne({ delivery: delivery._id });
       console.log('🔍 Existing COD found:', !!codExists);
 
       if (!codExists) {
-        console.log('📤 Creating COD with:', {
-          delivery: delivery._id,
-          customerName: delivery.customerName,
-          phoneNumber: delivery.phoneNumber,
-          address: delivery.address,
-          amount: delivery.codAmount,
-          salesperson: delivery.salesperson,
-          driver: delivery.driver,
-          car: {
-            make: delivery.make,
-            model: delivery.model,
-            trim: delivery.trim,
-            color: delivery.color,
-            year: delivery.year
-          }
+        return res.status(200).json({
+          message: 'Redirect to COD creation',
+          redirect: `/driver/cod/from-delivery/${delivery._id}`
         });
-
-        await COD.create({
-          delivery: delivery._id,
-          customerName: delivery.customerName,
-          phoneNumber: delivery.phoneNumber,
-          address: delivery.address,
-          amount: delivery.codAmount || 0,
-          method: 'None',
-          contractPicture: '',
-          checkPicture: '',
-          salesperson: delivery.salesperson,
-          driver: delivery.driver,
-          car: {
-            year: delivery.year,
-            make: delivery.make,
-            model: delivery.model,
-            trim: delivery.trim,
-            color: delivery.color
-          },
-          createdFromDelivery: true
-        });
-
-        console.log('✅ COD created successfully.');
       }
     }
 
