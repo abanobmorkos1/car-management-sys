@@ -48,11 +48,11 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     collectionName: 'sessions',
   }),
-  cookie: {
-  secure: true, // only true in production
+cookie: {
+  secure: process.env.NODE_ENV === 'production',
   httpOnly: true,
-  maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+}
 }));
 
 // 🛑 Prevent caching ONLY for the auth check route
