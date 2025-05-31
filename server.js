@@ -15,15 +15,15 @@ connectDB();
 
 
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://car-management-sys.onrender.com',
+  'https://your-vercel-frontend.vercel.app' // Replace with your actual frontend URL
+];
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const isLocalhost = origin.startsWith('http://localhost');
-    const isRender = origin === 'https://car-management-sys.onrender.com';
-    const isVercelPreview = origin.endsWith('.vercel.app');
-
-    if (isLocalhost || isRender || isVercelPreview) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
       console.error(`❌ Blocked by CORS: ${origin}`);
@@ -33,12 +33,12 @@ app.use(cors({
   credentials: true
 }));
 
+app.set('trust proxy', 1)
 // ✅ Middlewares
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set('trust proxy', 1)
 // ✅ Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
