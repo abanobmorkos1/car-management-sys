@@ -38,7 +38,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.set('trust proxy', 1)
+app.set('trust proxy', 1)
 // ✅ Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
@@ -51,6 +51,7 @@ app.use(session({
   cookie: {
   secure: true, // only true in production
   httpOnly: true,
+  sameSite: true,
   maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
