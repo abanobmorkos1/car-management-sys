@@ -17,11 +17,18 @@ connectDB();
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+
+    const isLocalhost = origin.startsWith('http://localhost');
+    const isRender = origin === 'https://car-management-sys.onrender.com';
+    const isVercelPreview = origin.endsWith('.vercel.app');
+
+    if (isLocalhost || isRender || isVercelPreview) {
       return callback(null, true);
+    } else {
+      console.error(`❌ Blocked by CORS: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
     }
-    console.error(`❌ Blocked by CORS: ${origin}`);
-    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
@@ -50,10 +57,10 @@ cookie: {
 }));
 
 // 🛑 Prevent caching ONLY for the auth check route
-app.use('/api/auth/sessions', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store');
-  next();
-});
+// app.use('/api/auth/sessions', (req, res, next) => {
+//   res.setHeader('Cache-Control', 'no-store');
+//   next();
+// });
 
 // 🔗 Routes
 app.use('/api', require('./Routes/generateURL'));
@@ -70,10 +77,10 @@ app.use('/api/hours/driver', require('./Routes/driverHoursRoutes'));
 app.use('/api/hours/manager-owner', require('./Routes/managerHoursRoutes'));
 
 // 🔍 Debug Session Route
-// app.get('/api/debug-session', (req, res) => {
-//   console.log('🧪 Session content:', req.session);
-//   res.json({ session: req.session });
-// });
+app.get('/api/debug-session', (req, res) => {
+  console.log('🧪 Session content:', req.session);
+  res.json({ session: req.session });
+});
 
 // 🚀 Start Server
 const PORT = process.env.PORT || 5000;
