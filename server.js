@@ -17,18 +17,11 @@ connectDB();
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const isLocalhost = origin.startsWith('http://localhost');
-    const isRender = origin === 'https://car-management-sys.onrender.com';
-    const isVercelPreview = origin.endsWith('.vercel.app');
-
-    if (isLocalhost || isRender || isVercelPreview) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      console.error(`❌ Blocked by CORS: ${origin}`);
-      return callback(new Error('Not allowed by CORS'));
     }
+    console.error(`❌ Blocked by CORS: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
