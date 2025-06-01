@@ -70,10 +70,10 @@ app.use('/api/hours/driver', require('./Routes/driverHoursRoutes'));
 app.use('/api/hours/manager-owner', require('./Routes/managerHoursRoutes'));
 
 // 🔍 Debug Session Route
-app.get('/api/debug-session', (req, res) => {
-  console.log('🧪 Session content:', req.session);
-  res.json({ session: req.session });
-});
+// app.get('/api/debug-session', (req, res) => {
+//   console.log('🧪 Session content:', req.session);
+//   res.json({ session: req.session });
+// });
 
 // 🚀 Start Server
 const PORT = process.env.PORT || 5000;
