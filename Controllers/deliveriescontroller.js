@@ -21,31 +21,21 @@ const getAllDeliveries = async (req, res) => {
     const filter = {};
 
     console.log("📥 Incoming query:", { from, to });
-    
-    if (req.session?.user?.role === 'Driver') {
-      filter.$or = [
-        { driver: null },
-        { driver: req.session.user.id }
-      ];
-    }
-    // 🔒 Sales: show only their deliveries
-      if (req.session?.user?.role === 'Sales') {
-        filter.salesperson = req.session.user.id;
-      }
-    // 📆 Optional date filtering
+
+    // 📆 Date filter: if no range provided, default to today
     if (from && to) {
       const start = new Date(from);
       const end = new Date(to);
       end.setHours(23, 59, 59, 999);
       filter.deliveryDate = { $gte: start, $lte: end };
-      console.log("📅 Final delivery date filter:", filter.deliveryDate);
+      console.log("📅 Using custom date range:", filter.deliveryDate);
     } else {
       const today = new Date();
       const start = new Date(today.setHours(0, 0, 0, 0));
       const end = new Date();
       end.setHours(23, 59, 59, 999);
       filter.deliveryDate = { $gte: start, $lte: end };
-      console.log("📅 Defaulting to today's date range:", filter.deliveryDate);
+      console.log("📅 Defaulting to today's range:", filter.deliveryDate);
     }
 
     const deliveries = await Delivery.find(filter)
@@ -64,6 +54,7 @@ const getAllDeliveries = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch deliveries' });
   }
 };
+
 
 
 const updateDelivery = async (req, res) => {

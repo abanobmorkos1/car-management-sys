@@ -15,15 +15,15 @@ connectDB();
 
 
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://car-management-sys.onrender.com',
-  'https://car-management-sys-fe.vercel.app' // Replace with your actual frontend URL
-];
-
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+
+    const isLocalhost = origin.startsWith('http://localhost');
+    const isRender = origin === 'https://car-management-sys.onrender.com';
+    const isVercelPreview = origin.endsWith('.vercel.app');
+
+    if (isLocalhost || isRender || isVercelPreview) {
       return callback(null, true);
     } else {
       console.error(`❌ Blocked by CORS: ${origin}`);
@@ -33,12 +33,12 @@ app.use(cors({
   credentials: true
 }));
 
-app.set('trust proxy', 1)
 // ✅ Middlewares
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// app.set('trust proxy', 1)
 // ✅ Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
@@ -48,12 +48,11 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     collectionName: 'sessions',
   }),
-cookie: {
-  secure: true,
+  cookie: {
+  secure: true, // only true in production
   httpOnly: true,
-  sameSite: 'none', 
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-}
+  maxAge: 7 * 24 * 60 * 60 * 1000
+  }
 }));
 
 // 🛑 Prevent caching ONLY for the auth check route
