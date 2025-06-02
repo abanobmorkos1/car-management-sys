@@ -38,7 +38,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.set('trust proxy', 1)
+app.set('trust proxy', 1)
 // ✅ Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
@@ -48,11 +48,12 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     collectionName: 'sessions',
   }),
-  cookie: {
-  secure: false, // only true in production
+ cookie: {
+  secure: process.env.NODE_ENV === 'production', // true on Render
   httpOnly: true,
+  sameSite: 'none', // allow cross-origin cookie
   maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+}
 }));
 
 // 🛑 Prevent caching ONLY for the auth check route
