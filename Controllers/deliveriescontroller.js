@@ -1,7 +1,7 @@
 const Delivery = require('../Schema/deliveries');
 const mongoose = require('mongoose');
 const COD = require('../Schema/cod');
-const sendSMS = require('../utils/sendSMS');
+const sendSMS = require('../Utils/sendSMS');
 const User = require('../Schema/user'); // 📱 Fetch driver number here
 
 
