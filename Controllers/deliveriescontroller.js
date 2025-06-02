@@ -1,9 +1,15 @@
 const Delivery = require('../Schema/deliveries');
 const mongoose = require('mongoose');
-const COD = require('../Schema/cod'); // Assuming you have a COD model
+const COD = require('../Schema/cod');
+const sendSMS = require('../utils/sendSMS');
+const User = require('../Schema/user'); // 📱 Fetch driver number here
+const { isValidPhoneNumber, parsePhoneNumber } = require('libphonenumber-js');
+
+
+// ✅ Create Delivery
 const createDelivery = async (req, res) => {
   try {
-        if (req.session?.user?.role === 'Sales') {
+    if (req.session?.user?.role === 'Sales') {
       req.body.salesperson = req.session.user.id;
     }
     const delivery = new Delivery(req.body);
@@ -15,38 +21,29 @@ const createDelivery = async (req, res) => {
   }
 };
 
+// ✅ Get All Deliveries
 const getAllDeliveries = async (req, res) => {
   try {
     const { from, to } = req.query;
     const filter = {};
 
-    console.log("📥 Incoming query:", { from, to });
-
-    // 📆 Date filter: if no range provided, default to today
     if (from && to) {
       const start = new Date(from);
       const end = new Date(to);
       end.setHours(23, 59, 59, 999);
       filter.deliveryDate = { $gte: start, $lte: end };
-      console.log("📅 Using custom date range:", filter.deliveryDate);
     } else {
       const today = new Date();
       const start = new Date(today.setHours(0, 0, 0, 0));
       const end = new Date();
       end.setHours(23, 59, 59, 999);
       filter.deliveryDate = { $gte: start, $lte: end };
-      console.log("📅 Defaulting to today's range:", filter.deliveryDate);
     }
 
     const deliveries = await Delivery.find(filter)
-      .populate('driver', '_id name')
-      .populate('salesperson', 'name')
+      .populate('driver', '_id name phoneNumber')
+      .populate('salesperson', 'name phoneNumber')
       .sort({ deliveryDate: -1 });
-
-    console.log("📦 Deliveries fetched:", deliveries.length);
-    deliveries.forEach(d => {
-      console.log('🗓️ Delivery:', d.customerName, '-', d.deliveryDate);
-    });
 
     res.json(deliveries);
   } catch (err) {
@@ -55,28 +52,17 @@ const getAllDeliveries = async (req, res) => {
   }
 };
 
-
-
+// ✅ Update Delivery Status (Drivers/Managers)
 const updateDelivery = async (req, res) => {
   try {
-    console.log('📥 updateDelivery called for ID:', req.params.id);
-
     const deliveryId = req.params.id;
     const userId = req.session?.user?.id;
     const userRole = req.session?.user?.role;
 
     const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) return res.status(404).json({ message: 'Delivery not found' });
+    if (!userId || !userRole) return res.status(401).json({ message: 'Unauthorized - Missing user context' });
 
-    if (!delivery) {
-      return res.status(404).json({ message: 'Delivery not found' });
-    }
-
-    // Null safety check
-    if (!userId || !userRole) {
-      return res.status(401).json({ message: 'Unauthorized - Missing user context' });
-    }
-
-    // Permission check: Only assigned driver or management (if assigned) can update
     if (
       !(userRole === 'Driver' && delivery.driver?.toString() === userId) &&
       !(userRole === 'Management' && delivery.driver?.toString() === userId)
@@ -84,20 +70,13 @@ const updateDelivery = async (req, res) => {
       return res.status(403).json({ message: 'Only the assigned driver or management can update delivery status' });
     }
 
-    console.log('📝 Status change:', {
-      previous: delivery.status,
-      new: req.body.status
-    });
-
     const prevStatus = delivery.status;
     delivery.status = req.body.status;
     await delivery.save();
 
-    // ✅ If Delivered, redirect to COD form for contract upload
+    // Redirect to COD if just delivered
     if (req.body.status === 'Delivered' && prevStatus !== 'Delivered') {
       const codExists = await COD.findOne({ delivery: delivery._id });
-      console.log('🔍 Existing COD found:', !!codExists);
-
       if (!codExists) {
         return res.status(200).json({
           message: 'Redirect to COD creation',
@@ -107,50 +86,76 @@ const updateDelivery = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Status updated', delivery });
-
   } catch (err) {
     console.error('❌ Error updating delivery:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
+
+
+const editDeliveryDetails = async (req, res) => {
+  try {
+    const deliveryId = req.params.id;
+
+    const updatedDelivery = await Delivery.findByIdAndUpdate(
+      deliveryId,
+      req.body,
+      { new: true }
+    ).populate('driver'); // 👈 Ensure driver info is available
+
+    if (!updatedDelivery) {
+      return res.status(404).json({ message: 'Delivery not found' });
+    }
+
+    // ✅ Send SMS if driver is assigned and has a phone number
+    if (updatedDelivery.driver?.phoneNumber) {
+      console.log(' Driver phone:', updatedDelivery.driver.phoneNumber);
+      console.log(' Sending SMS for:', updatedDelivery.customerName);
+
+      await sendSMS(
+      updatedDelivery.driver.phoneNumber,
+      `DriveFast: Delivery update for ${updatedDelivery.customerName}. New address: ${updatedDelivery.address || 'N/A'}. Reply STOP to unsubscribe.`
+    );
+
+    }
+
+    res.status(200).json(updatedDelivery);
+  } catch (err) {
+    console.error(' Error updating delivery:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+// ✅ Delete Delivery
 const deleteDelivery = async (req, res) => {
   try {
     const deleted = await Delivery.findByIdAndDelete(req.params.id);
-
     if (!deleted) return res.status(404).json({ message: 'Delivery not found' });
-
     res.status(200).json({ message: 'Delivery deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting delivery', error: err.message });
   }
 };
 
+// ✅ Assign Driver
 const assignDriver = async (req, res) => {
   const { id } = req.params;
   const { driverId } = req.body;
 
-
-
-  if (!driverId) {
-    return res.status(400).json({ message: 'Driver ID is required' });
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(driverId)) {
-    return res.status(400).json({ message: 'Invalid driver ID format' });
-  }
+  if (!driverId) return res.status(400).json({ message: 'Driver ID is required' });
+  if (!mongoose.Types.ObjectId.isValid(driverId)) return res.status(400).json({ message: 'Invalid driver ID format' });
 
   try {
     const updated = await Delivery.findByIdAndUpdate(
       id,
-      { driver: new mongoose.Types.ObjectId(driverId) }, // ✅ fixed
+      { driver: new mongoose.Types.ObjectId(driverId) },
       { new: true }
-    ).populate('driver', '_id name'); // ✅ ensure _id is included
+    ).populate('driver', '_id name');
 
-    if (!updated) {
-      return res.status(404).json({ message: 'Delivery not found' });
-    }
-
+    if (!updated) return res.status(404).json({ message: 'Delivery not found' });
     res.status(200).json({ message: 'Driver assigned successfully', delivery: updated });
   } catch (err) {
     console.error('❌ Error during driver assignment:', err);
@@ -158,11 +163,11 @@ const assignDriver = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createDelivery,
   getAllDeliveries,
   updateDelivery,
+  editDeliveryDetails,
   deleteDelivery,
   assignDriver
 };

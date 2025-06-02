@@ -13,17 +13,33 @@ const registerUser = async (req, res) => {
     return res.status(403).json({ message: 'Invalid invite code' });
   }
 
+  // 📞 Sanitize phone number
+  let rawPhone = phoneNumber.replace(/[^0-9]/g, '');
+
+  if (rawPhone.length === 10) {
+    req.body.phoneNumber = `+1${rawPhone}`;
+  } else if (rawPhone.length === 11 && rawPhone.startsWith('1')) {
+    req.body.phoneNumber = `+${rawPhone}`;
+  } else if (!rawPhone.startsWith('+')) {
+    return res.status(400).json({ message: 'Invalid phone number format' });
+  }
+
   const userExists = await User.findOne({ email });
   if (userExists) {
     return res.status(400).json({ message: 'User already exists' });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword, role, phoneNumber });
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role,
+    phoneNumber: req.body.phoneNumber, // sanitized number
+  });
 
   res.status(201).json({ message: 'User registered successfully', user });
 };
-
 // Login
 const loginUser = async (req, res) => {
   try {

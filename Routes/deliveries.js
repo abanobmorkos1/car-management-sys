@@ -5,7 +5,8 @@ const {
   getAllDeliveries,
   updateDelivery,
   deleteDelivery,
-  assignDriver
+  assignDriver,
+  editDeliveryDetails
 } = require('../Controllers/deliveriescontroller');
 const Delivery = require('../Schema/deliveries')
 
@@ -14,6 +15,8 @@ router.put('/assign-driver/:id', verifyToken, assignDriver);
 router.post('/', verifyToken ,createDelivery);             // Create
 router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
 router.put('/status/:id', verifyToken, updateDelivery); // Edit
+router.put('/edit/:id', verifyToken, editDeliveryDetails); // sales edit form
+
 // router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 router.get('/:id', async (req, res) => {
   try {
