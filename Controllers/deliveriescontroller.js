@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const COD = require('../Schema/cod');
 const sendSMS = require('../utils/sendSMS');
 const User = require('../Schema/user'); // 📱 Fetch driver number here
-const { isValidPhoneNumber, parsePhoneNumber } = require('libphonenumber-js');
 
 
 // ✅ Create Delivery
@@ -113,9 +112,9 @@ const editDeliveryDetails = async (req, res) => {
       console.log(' Driver phone:', updatedDelivery.driver.phoneNumber);
       console.log(' Sending SMS for:', updatedDelivery.customerName);
 
-      await sendSMS(
+    await sendSMS(
       updatedDelivery.driver.phoneNumber,
-      `DriveFast: Delivery update for ${updatedDelivery.customerName}. New address: ${updatedDelivery.address || 'N/A'}. Reply STOP to unsubscribe.`
+      `DriveFast: Delivery for ${updatedDelivery.customerName} updated. New address: ${updatedDelivery.address || 'N/A'}. Delivery at ${new Date(updatedDelivery.deliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Reply STOP to opt out.`
     );
 
     }
