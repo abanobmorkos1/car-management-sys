@@ -6,6 +6,7 @@ const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const connectDB = require('./Config/db');
+const helmet = require('helmet'); // ✅ Added
 const driverRoutes = require('./Routes/driver');
 
 const app = express();
@@ -16,11 +17,14 @@ connectDB();
 // ✅ Trust Render's proxy for secure cookies
 app.set('trust proxy', 1);
 
+// ✅ Secure headers with helmet
+app.use(helmet()); // ✅ Now you're protected
+
+// ✅ CORS config
 const allowedOrigins = [
   'http://localhost:3000',
   'https://app.vipautoapp.com',
-  'https://car-management-sys.onrender.com',
-  // Add any preview links if needed
+  'https://car-management-sys.onrender.com'
 ];
 
 app.use(cors({
@@ -50,15 +54,15 @@ app.use(session({
     collectionName: 'sessions',
   }),
   cookie: {
-    domain: process.env.COOKIE_DOMAIN || undefined, // e.g. .vipautoapp.com in production
+    domain: process.env.COOKIE_DOMAIN || undefined,
     sameSite: 'Lax',
     secure: true,
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   }
 }));
 
-// 🛑 Prevent caching for auth session route
+// 🛑 Prevent caching for auth check route
 app.use('/api/auth/sessions', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
