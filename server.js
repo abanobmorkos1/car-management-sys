@@ -10,36 +10,37 @@ const driverRoutes = require('./Routes/driver');
 
 const app = express();
 
-// 🧠 MongoDB connection
+// 🧠 Connect to MongoDB
 connectDB();
 
+// ✅ Trust Render's proxy for secure cookies
+app.set('trust proxy', 1);
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://app.vipautoapp.com',
+  'https://car-management-sys.onrender.com',
+  // Add any preview links if needed
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const isLocalhost = origin.startsWith('http://localhost');
-    const isRender = origin === 'https://car-management-sys.onrender.com';
-    const isVercelPreview = origin.endsWith('.vercel.app');
-
-    if (isLocalhost || isRender || isVercelPreview) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      console.error(`❌ Blocked by CORS: ${origin}`);
-      return callback(new Error('Not allowed by CORS'));
     }
+    console.error(`❌ Blocked by CORS: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
 
-// ✅ Middlewares
+// ✅ Middleware
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set('trust proxy', 1)
-// ✅ Session setup
+
+// ✅ Session Setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
   resave: false,
@@ -48,15 +49,16 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     collectionName: 'sessions',
   }),
- cookie: {
-  secure: process.env.NODE_ENV === 'production', // true on Render
-  httpOnly: true,
-  sameSite: 'none', // allow cross-origin cookie
-  maxAge: 7 * 24 * 60 * 60 * 1000
-}
+  cookie: {
+    domain: process.env.COOKIE_DOMAIN || undefined, // e.g. .vipautoapp.com in production
+    sameSite: 'Lax',
+    secure: true,
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  }
 }));
 
-// 🛑 Prevent caching ONLY for the auth check route
+// 🛑 Prevent caching for auth session route
 app.use('/api/auth/sessions', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
