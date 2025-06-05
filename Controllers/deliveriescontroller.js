@@ -58,22 +58,29 @@ const updateDelivery = async (req, res) => {
     const userId = req.session?.user?.id;
     const userRole = req.session?.user?.role;
 
-    const delivery = await Delivery.findById(deliveryId);
-    if (!delivery) return res.status(404).json({ message: 'Delivery not found' });
-    if (!userId || !userRole) return res.status(401).json({ message: 'Unauthorized - Missing user context' });
-
-    if (
-      !(userRole === 'Driver' && delivery.driver?.toString() === userId) &&
-      !(userRole === 'Management' && delivery.driver?.toString() === userId)
-    ) {
-      return res.status(403).json({ message: 'Only the assigned driver or management can update delivery status' });
+    if (!userId || !userRole) {
+      return res.status(401).json({ message: 'Unauthorized - Missing user context' });
     }
 
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) return res.status(404).json({ message: 'Delivery not found' });
+
+    // ❌ If user is a driver and NOT assigned to this delivery, reject
+    if (userRole === 'Driver' && delivery.driver?.toString() !== userId) {
+      return res.status(403).json({ message: 'Drivers can only update their assigned deliveries' });
+    }
+
+    // ✅ Managers can assign themselves if no driver is set
+    if (userRole === 'Management' && !delivery.driver) {
+      delivery.driver = userId;
+    }
+
+    // ✅ Now update the status
     const prevStatus = delivery.status;
     delivery.status = req.body.status;
     await delivery.save();
 
-    // Redirect to COD if just delivered
+    // ✅ If status is 'Delivered' → redirect to COD creation (if not already exists)
     if (req.body.status === 'Delivered' && prevStatus !== 'Delivered') {
       const codExists = await COD.findOne({ delivery: delivery._id });
       if (!codExists) {

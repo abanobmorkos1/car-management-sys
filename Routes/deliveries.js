@@ -14,7 +14,7 @@ const router = express.Router();
 router.put('/assign-driver/:id', verifyToken, assignDriver);
 router.post('/', verifyToken ,createDelivery);             // Create
 router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
-router.put('/status/:id', verifyToken, updateDelivery); // Edit
+router.put('/update-status/:id', verifyToken, updateDelivery);
 router.put('/edit/:id', verifyToken, editDeliveryDetails); // sales edit form
 
 // router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete

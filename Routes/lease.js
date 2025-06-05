@@ -4,10 +4,12 @@ const {
   getAlllr,
   deleteLr,
   updateLr,
-  getLeaseByVin
+  getLeaseByVin,
+  setLeaseReturnStatus,
+  updateGroundingStatus
 } = require('../Controllers/leasecontroller');
 const router = express.Router();
-const { verifyToken } = require('../Middleware/auth');
+const { verifyToken ,requireRole } = require('../Middleware/auth');
 
 // Add a lease return
 router.post(
@@ -27,5 +29,11 @@ router.put('/updateLr/:id', updateLr);
 
 // Search by VIN
 router.get('/by-vin/:vin', getLeaseByVin);
+router.put('/set-status/:id', verifyToken, requireRole('Sales', 'Owner'), setLeaseReturnStatus);
+
+// Allow only Sales, Management, or Owner to set grounding
+router.put('/grounding-status/:id', verifyToken, requireRole('Sales', 'Management', 'Owner', 'Driver'), updateGroundingStatus);
+
+
 
 module.exports = router;

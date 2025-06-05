@@ -6,7 +6,7 @@ const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const connectDB = require('./Config/db');
-const helmet = require('helmet'); // ✅ Added
+const helmet = require('helmet');
 const driverRoutes = require('./Routes/driver');
 
 const app = express();
@@ -14,18 +14,11 @@ const app = express();
 // 🧠 Connect to MongoDB
 connectDB();
 
-// ✅ Trust Render's proxy for secure cookies
-app.set('trust proxy', 1);
+// ✅ Secure headers (optional for dev, but fine to include)
+app.use(helmet());
 
-// ✅ Secure headers with helmet
-app.use(helmet()); // ✅ Now you're protected
-
-// ✅ CORS config
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://app.vipautoapp.com',
-  'https://car-management-sys.onrender.com'
-];
+// ✅ Local CORS setup
+const allowedOrigins = ['http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -44,7 +37,10 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Session Setup
+// ✅ Trust localhost (not needed, but harmless)
+app.set('trust proxy', 1);
+
+// ✅ Session Setup for localhost
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
   resave: false,
@@ -54,15 +50,14 @@ app.use(session({
     collectionName: 'sessions',
   }),
   cookie: {
-    domain: process.env.COOKIE_DOMAIN || undefined,
-    sameSite: 'Lax',
-    secure: true,
+    sameSite: 'Lax',     // ✅ Fine for localhost
+    secure: false,       // ✅ Use HTTP for localhost
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   }
 }));
 
-// 🛑 Prevent caching for auth check route
+// 🛑 No caching for auth
 app.use('/api/auth/sessions', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
@@ -90,4 +85,4 @@ app.get('/api/debug-session', (req, res) => {
 
 // 🚀 Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));

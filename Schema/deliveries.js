@@ -11,9 +11,9 @@ const deliverySchema = new mongoose.Schema({
     required: true
   },
   driver: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'User'
-},
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   deliveryDate: { type: Date, required: true },
   codAmount: { type: Number, required: true },
   codCollected: { type: Boolean, default: false },
@@ -30,10 +30,15 @@ const deliverySchema = new mongoose.Schema({
   trim: { type: String },
   color: { type: String },
   year: { type: String },
+
+  // ✅ Updated leaseReturn object
   leaseReturn: {
-  type: Boolean,
-  default: false
-},
+    willReturn: { type: Boolean, default: false },
+    carYear: { type: String },
+    carMake: { type: String },
+    carModel: { type: String }
+  },
+
   status: {
     type: String,
     enum: [

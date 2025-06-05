@@ -45,6 +45,23 @@ const leaseSchema = new mongoose.Schema({
     key: { type: String, required: true },
     uploadedAt: { type: Date, default: Date.now }
   }]
+, returnStatus: {
+  type: String,
+  enum: ['Ground', 'Buy', 'In Progress', 'Not Set'],
+  default: 'Not Set',
+},
+updatedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+},
+statusUpdatedAt: {
+  type: Date
+},
+groundingStatus: {
+  type: String,
+  enum: ['Ground', 'Buy', 'In Progress', ''],
+  default: ''
+},
 }, { timestamps: true });
 
 leaseSchema.methods.setPickupDate = function (pickedUpToday, customDate = null) {

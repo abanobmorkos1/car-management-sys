@@ -155,10 +155,69 @@ const getLeaseByVin = async (req, res) => {
   }
 };
 
+// Update lease return status
+const setLeaseReturnStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { returnStatus } = req.body;
+
+    const leaseReturn = await LeaseReturn.findById(id);
+    if (!leaseReturn) return res.status(404).json({ message: 'Lease return not found' });
+
+    // Only Sales and Owner can update
+    if (!['Sales', 'Owner'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    leaseReturn.returnStatus = returnStatus;
+    await leaseReturn.save();
+
+    res.status(200).json({ message: 'Status updated', leaseReturn });
+  } catch (err) {
+    console.error('Error updating lease return status:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateGroundingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['Ground', 'Buy', 'In Progress', 'Grounded', ''].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    if (status === 'Grounded' && !['Driver', 'Management'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only drivers or management can finalize grounding.' });
+    }
+
+    const updated = await Lease.findByIdAndUpdate(
+      id,
+      {
+        groundingStatus: status,
+        updatedBy: req.user.id,
+        statusUpdatedAt: new Date()
+      },
+      { new: true }
+    )
+    .populate('updatedBy', 'name role')
+    .populate('salesPerson', 'name')
+    .populate('driver', 'name');
+
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating lease status:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   addLr,
   getAlllr,
   deleteLr,
   updateLr,
-  getLeaseByVin
+  getLeaseByVin,
+  setLeaseReturnStatus,
+  updateGroundingStatus
 };
