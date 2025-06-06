@@ -6,7 +6,7 @@ const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const connectDB = require('./Config/db');
-const helmet = require('helmet');
+const helmet = require('helmet'); // ✅ Added
 const driverRoutes = require('./Routes/driver');
 
 const app = express();
@@ -14,11 +14,18 @@ const app = express();
 // 🧠 Connect to MongoDB
 connectDB();
 
-// ✅ Secure headers (optional for dev, but fine to include)
-app.use(helmet());
+// ✅ Trust Render's proxy for secure cookies
+app.set('trust proxy', 1);
 
-// ✅ Local CORS setup
-const allowedOrigins = ['http://localhost:3000'];
+// ✅ Secure headers with helmet
+app.use(helmet()); // ✅ Now you're protected
+
+// ✅ CORS config
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://app.vipautoapp.com',
+  'https://car-management-sys.onrender.com'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -40,7 +47,6 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Trust localhost (not needed, but harmless)
 app.set('trust proxy', 1);
 
-// ✅ Session Setup for localhost
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecret',
   resave: false,
@@ -50,8 +56,9 @@ app.use(session({
     collectionName: 'sessions',
   }),
   cookie: {
-    sameSite: 'Lax',     // ✅ Fine for localhost
-    secure: false,       // ✅ Use HTTP for localhost
+    domain: process.env.COOKIE_DOMAIN , // ✅ Enables cross-subdomain cookies
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    secure: process.env.NODE_ENV === 'production', // ✅ Must be true if deployed over HTTPS
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   }
