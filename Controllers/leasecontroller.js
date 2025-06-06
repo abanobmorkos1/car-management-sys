@@ -33,12 +33,13 @@ const getCarDetailsFromVin = async (vin) => {
 
 const addLr = async (req, res) => {
   try {
-    const {
-      vin, miles, bank, customerName, address,
-      salesPerson, driver, damageReport, hasTitle,
-      city, state, zip,
-      odometerKey, titleKey, odometerStatementKey, leaseReturnMediaKeys = []
-    } = req.body;
+const {
+  vin, miles, bank, customerName, address,
+  salesPerson, driver, damageReport, hasTitle,
+  city, state, zip,
+  odometerKey, titleKey, odometerStatementKey, leaseReturnMediaKeys = [],
+  leftPlates, plateNumber
+} = req.body;
 
     const vinInfo = await getCarDetailsFromVin(vin);
     if (!vinInfo.make || !vinInfo.model || !vinInfo.year) {
@@ -72,7 +73,9 @@ const addLr = async (req, res) => {
   odometerKey,
   titleKey: hasTitle === 'true' ? titleKey : null,
   odometerStatementKey, // ✅ ADD THIS
-  leaseReturnMediaKeys
+  leaseReturnMediaKeys,
+  leftPlates,
+  plateNumber: leftPlates ? plateNumber : '',
 });
 
     const saved = await lease.save();

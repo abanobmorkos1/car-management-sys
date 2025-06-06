@@ -9,6 +9,7 @@ const {
   editDeliveryDetails
 } = require('../Controllers/deliveriescontroller');
 const Delivery = require('../Schema/deliveries')
+const COD = require('../Schema/cod');
 
 const router = express.Router();
 router.put('/assign-driver/:id', verifyToken, assignDriver);
@@ -47,5 +48,18 @@ router.get('/by-delivery/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+router.put('/cod-info/:id', verifyToken, async (req, res) => {
+  try {
+    const { codCollected, codMethod } = req.body;
+    const updated = await Delivery.findByIdAndUpdate(
+      req.params.id,
+      { codCollected, codMethod },
+      { new: true }
+    );
+    res.json(updated);
+  } catch (err) {
+    console.error('❌ Error updating COD info on delivery:', err);
+    res.status(500).json({ message: 'Failed to update delivery COD info' });
+  }
+});
 module.exports = router;

@@ -1,7 +1,7 @@
 const COD = require('../Schema/cod');
-const { verifyToken } = require('../Middleware/auth');
+const Delivery = require('../Schema/deliveries'); // ✅ Needed for delivery lookup
 
-
+// ✅ CREATE COD with lease return check
 const createCOD = async (req, res) => {
   try {
     const {
@@ -47,14 +47,27 @@ const createCOD = async (req, res) => {
     });
 
     await cod.save();
-    res.status(201).json(cod);
+
+    // ✅ Check if lease return is required
+    const deliveryDoc = await Delivery.findById(delivery);
+    if (deliveryDoc?.leaseReturn?.willReturn) {
+      return res.status(201).json({
+        message: 'COD created. Redirect to lease return.',
+        redirect: `/driver/lease-return/from-delivery/${delivery}`
+      });
+    }
+
+    return res.status(201).json({
+      message: 'COD created successfully',
+      cod
+    });
   } catch (error) {
     console.error('🔥 Error inside createCOD:', error);
     res.status(500).json({ message: 'Failed to create COD', error: error.message });
   }
 };
 
-// Delete COD by ID
+// ✅ DELETE COD by ID
 const deleteCOD = async (req, res) => {
   try {
     const deleted = await COD.findByIdAndDelete(req.params.id);
@@ -67,7 +80,7 @@ const deleteCOD = async (req, res) => {
   }
 };
 
-// Update COD by ID
+// ✅ UPDATE COD by ID
 const updateCOD = async (req, res) => {
   try {
     const updated = await COD.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -80,6 +93,20 @@ const updateCOD = async (req, res) => {
   }
 };
 
+// ✅ GET COD by delivery ID
+const getCODByDeliveryId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cod = await COD.findOne({ delivery: id });
+    if (!cod) return res.status(404).json({ message: 'COD not found for this delivery' });
+    res.json(cod);
+  } catch (err) {
+    console.error('❌ Error fetching COD:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ GET all CODs
 const getAllCOD = async (req, res) => {
   try {
     const cods = await COD.find()
@@ -92,12 +119,11 @@ const getAllCOD = async (req, res) => {
   }
 };
 
-
-// Search CODs by customer name (partial + case-insensitive)
+// ✅ SEARCH CODs by customer name
 const searchCODByCustomer = async (req, res) => {
   try {
     const name = req.params.name;
-    const regex = new RegExp(name, 'i'); // case-insensitive search
+    const regex = new RegExp(name, 'i'); // case-insensitive
     const results = await COD.find({ customerName: regex });
 
     if (results.length === 0) {
@@ -110,10 +136,12 @@ const searchCODByCustomer = async (req, res) => {
   }
 };
 
+// ✅ EXPORT CONTROLLER
 module.exports = {
   createCOD,
   deleteCOD,
-  updateCOD,  
+  updateCOD,
+  getCODByDeliveryId,
   getAllCOD,
   searchCODByCustomer
 };

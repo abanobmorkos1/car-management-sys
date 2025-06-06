@@ -62,6 +62,8 @@ groundingStatus: {
   enum: ['Ground', 'Buy', 'In Progress', ''],
   default: ''
 },
+leftPlates: { type: Boolean, default: false },
+plateNumber: { type: String, default: '' },
 }, { timestamps: true });
 
 leaseSchema.methods.setPickupDate = function (pickedUpToday, customDate = null) {

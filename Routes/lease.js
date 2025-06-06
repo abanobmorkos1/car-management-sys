@@ -1,4 +1,6 @@
 const express = require('express');
+const Delivery = require('../Schema/deliveries');
+const COD = require('../Schema/cod');
 const {
   addLr,
   getAlllr,
@@ -8,6 +10,8 @@ const {
   setLeaseReturnStatus,
   updateGroundingStatus
 } = require('../Controllers/leasecontroller');
+
+
 const router = express.Router();
 const { verifyToken ,requireRole } = require('../Middleware/auth');
 
@@ -33,6 +37,8 @@ router.put('/set-status/:id', verifyToken, requireRole('Sales', 'Owner'), setLea
 
 // Allow only Sales, Management, or Owner to set grounding
 router.put('/grounding-status/:id', verifyToken, requireRole('Sales', 'Management', 'Owner', 'Driver'), updateGroundingStatus);
+
+// in leaseReturnRoutes.js
 
 
 
