@@ -23,26 +23,33 @@ const createDelivery = async (req, res) => {
 // ✅ Get All Deliveries
 const getAllDeliveries = async (req, res) => {
   try {
-    const { from, to } = req.query;
+    const { start, end } = req.query;
     const filter = {};
 
-    if (from && to) {
-      const start = new Date(from);
-      const end = new Date(to);
-      end.setHours(23, 59, 59, 999);
-      filter.deliveryDate = { $gte: start, $lte: end };
+    // 📅 Date range filtering if start and end are passed from frontend
+    if (start && end) {
+      filter.deliveryDate = {
+        $gte: new Date(start),
+        $lte: new Date(end)
+      };
     } else {
+      // 🕒 Default to today (if no query is passed)
       const today = new Date();
-      const start = new Date(today.setHours(0, 0, 0, 0));
-      const end = new Date();
-      end.setHours(23, 59, 59, 999);
-      filter.deliveryDate = { $gte: start, $lte: end };
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+      filter.deliveryDate = { $gte: startOfDay, $lte: endOfDay };
     }
 
+
+
+    // 🧠 Fetch and populate deliveries
     const deliveries = await Delivery.find(filter)
       .populate('driver', '_id name phoneNumber')
       .populate('salesperson', 'name phoneNumber')
       .sort({ deliveryDate: -1 });
+
+    // 🪵 Optional debug log
+    console.log('📦 Deliveries found:', deliveries.length);
 
     res.json(deliveries);
   } catch (err) {
@@ -50,7 +57,6 @@ const getAllDeliveries = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch deliveries' });
   }
 };
-
 // ✅ Update Delivery Status (Drivers/Managers)
 const updateDelivery = async (req, res) => {
   try {
