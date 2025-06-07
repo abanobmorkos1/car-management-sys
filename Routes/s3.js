@@ -49,7 +49,7 @@ router.post('/generate-url', verifyToken, async (req, res) => {
       ACL: 'private'
     });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 });
 
     res.status(200).json({ uploadUrl, key });
   } catch (err) {
