@@ -5,11 +5,13 @@ const {
   getAllCars,
   getCarById,
   updateCar,
-  deleteCar
+  deleteCar,
+  checkVin,
 } = require('../Controllers/newcarcontroller');
 
 const router = express.Router();
 
+router.get('/check-vin', verifyToken, checkVin);
 router.post('/', verifyToken, createCar);
 router.get('/', verifyToken, getAllCars);
 router.get('/:id', verifyToken, getCarById);

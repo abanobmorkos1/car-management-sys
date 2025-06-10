@@ -6,17 +6,19 @@ const {
   updateDelivery,
   deleteDelivery,
   assignDriver,
-  editDeliveryDetails
+  editDeliveryDetails,
+  codChartData,
 } = require('../Controllers/deliveriescontroller');
-const Delivery = require('../Schema/deliveries')
+const Delivery = require('../Schema/deliveries');
 const COD = require('../Schema/cod');
 
 const router = express.Router();
 router.put('/assign-driver/:id', verifyToken, assignDriver);
-router.post('/', verifyToken ,createDelivery);             // Create
-router.get('/deliveries',verifyToken, getAllDeliveries);          // Read all
+router.post('/', verifyToken, createDelivery); // Create
+router.get('/deliveries', verifyToken, getAllDeliveries); // Read all
 router.put('/update-status/:id', verifyToken, updateDelivery);
 router.put('/edit/:id', verifyToken, editDeliveryDetails); // sales edit form
+router.get('/cod-chart-data', verifyToken, codChartData); // Get COD chart data
 
 // router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 router.get('/:id', async (req, res) => {
@@ -40,7 +42,10 @@ router.get('/by-delivery/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const cod = await COD.findOne({ delivery: id }); // 🔍 looks by delivery ID
-    if (!cod) return res.status(404).json({ message: 'COD not found for this delivery' });
+    if (!cod)
+      return res
+        .status(404)
+        .json({ message: 'COD not found for this delivery' });
 
     res.json(cod);
   } catch (err) {

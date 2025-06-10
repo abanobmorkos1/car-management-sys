@@ -15,15 +15,19 @@ const createCOD = async (req, res) => {
       salesperson,
       driver,
       car,
-      delivery
+      delivery,
     } = req.body;
 
     if (!salesperson || !driver) {
-      return res.status(400).json({ message: 'Salesperson and driver are required.' });
+      return res
+        .status(400)
+        .json({ message: 'Salesperson and driver are required.' });
     }
 
     if (!delivery) {
-      return res.status(400).json({ message: 'Delivery reference is required.' });
+      return res
+        .status(400)
+        .json({ message: 'Delivery reference is required.' });
     }
 
     const cod = new COD({
@@ -42,8 +46,8 @@ const createCOD = async (req, res) => {
         make: car?.make || '',
         model: car?.model || '',
         trim: car?.trim || '',
-        color: car?.color || ''
-      }
+        color: car?.color || '',
+      },
     });
 
     await cod.save();
@@ -53,17 +57,19 @@ const createCOD = async (req, res) => {
     if (deliveryDoc?.leaseReturn?.willReturn) {
       return res.status(201).json({
         message: 'COD created. Redirect to lease return.',
-        redirect: `/driver/lease-return/from-delivery/${delivery}`
+        redirect: `/driver/lease-return/from-delivery/${delivery}`,
       });
     }
 
     return res.status(201).json({
       message: 'COD created successfully',
-      cod
+      cod,
     });
   } catch (error) {
     console.error('🔥 Error inside createCOD:', error);
-    res.status(500).json({ message: 'Failed to create COD', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to create COD', error: error.message });
   }
 };
 
@@ -83,7 +89,9 @@ const deleteCOD = async (req, res) => {
 // ✅ UPDATE COD by ID
 const updateCOD = async (req, res) => {
   try {
-    const updated = await COD.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await COD.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     if (!updated) {
       return res.status(404).json({ message: 'COD entry not found' });
     }
@@ -98,7 +106,10 @@ const getCODByDeliveryId = async (req, res) => {
   try {
     const { id } = req.params;
     const cod = await COD.findOne({ delivery: id });
-    if (!cod) return res.status(404).json({ message: 'COD not found for this delivery' });
+    if (!cod)
+      return res
+        .status(404)
+        .json({ message: 'COD not found for this delivery' });
     res.json(cod);
   } catch (err) {
     console.error('❌ Error fetching COD:', err);
@@ -109,30 +120,41 @@ const getCODByDeliveryId = async (req, res) => {
 // ✅ GET all CODs
 const getAllCOD = async (req, res) => {
   try {
-    const cods = await COD.find()
+    let { page = 1, perPage = 6, searchText = '' } = req.query;
+    page = parseInt(page);
+    perPage = parseInt(perPage);
+    let query = {
+      $and: [],
+    };
+
+    if (searchText) {
+      const regex = new RegExp(searchText, 'i'); // case-insensitive search
+      query.$and.push({
+        $or: [
+          { customerName: regex },
+          { phoneNumber: regex },
+          { address: regex },
+          { 'car.make': regex },
+          { 'car.model': regex },
+        ],
+      });
+    }
+    if (req.user.role === 'Sales') {
+      query.$and.push({ salesperson: req.user.id });
+    }
+    const cods = await COD.find(query)
       .populate('salesperson', 'name phoneNumber email')
       .populate('driver', 'name phoneNumber')
-      .sort({ createdAt: -1 });
-    res.status(200).json(cods);
+      .populate('delivery', 'deliveryDate status')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage);
+    const total = await COD.countDocuments(query);
+    res.json({ cods, total });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch CODs', error: err.message });
-  }
-};
-
-// ✅ SEARCH CODs by customer name
-const searchCODByCustomer = async (req, res) => {
-  try {
-    const name = req.params.name;
-    const regex = new RegExp(name, 'i'); // case-insensitive
-    const results = await COD.find({ customerName: regex });
-
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No COD entries found for this customer' });
-    }
-
-    res.status(200).json(results);
-  } catch (err) {
-    res.status(500).json({ message: 'Error searching CODs', error: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to fetch CODs', error: err.message });
   }
 };
 
@@ -143,5 +165,4 @@ module.exports = {
   updateCOD,
   getCODByDeliveryId,
   getAllCOD,
-  searchCODByCustomer
 };
