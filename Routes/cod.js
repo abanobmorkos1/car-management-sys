@@ -1,33 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../Middleware/auth'); // Import your auth middleware
-const COD = require('../Schema/cod'); // Import your COD model
+const { verifyToken } = require('../Middleware/auth');
 const {
   createCOD,
   deleteCOD,
   updateCOD,
   getAllCOD,
-  searchCODByCustomer
 } = require('../Controllers/codcontroller');
 
-router.post(
-  '/newcod',
-  verifyToken,
-  createCOD
-);
+router.post('/newcod', verifyToken, createCOD);
 
+router.delete('/delete/:id', verifyToken, deleteCOD);
 
+router.put('/update/:id', verifyToken, updateCOD);
 
-// Delete COD
-router.delete('/delete/:id', deleteCOD);
-
-// Update COD
-router.put('/update/:id', updateCOD);
-
-// Get all CODs
-router.get('/all', getAllCOD);
-
-// Search CODs by customer name
-router.get('/search/:name', searchCODByCustomer);
+router.get('/all', verifyToken, getAllCOD);
 
 module.exports = router;

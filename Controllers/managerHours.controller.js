@@ -1,21 +1,25 @@
 const DriverHours = require('../Schema/DriverHour');
 const Delivery = require('../Schema/deliveries');
 
-
-
 exports.overrideHours = async (req, res) => {
   const { id: userId, role } = req.user;
   const { id } = req.params;
   const { totalHours } = req.body;
 
   if (!['Management', 'owner'].includes(role)) {
-    return res.status(403).json({ message: 'Unauthorized: Only managers or owners can override hours' });
+    return res.status(403).json({
+      message: 'Unauthorized: Only managers or owners can override hours',
+    });
   }
 
   try {
-    const updated = await DriverHours.findByIdAndUpdate(id, {
-      totalHours: parseFloat(totalHours)
-    }, { new: true });
+    const updated = await DriverHours.findByIdAndUpdate(
+      id,
+      {
+        totalHours: parseFloat(totalHours),
+      },
+      { new: true }
+    );
 
     if (!updated) {
       return res.status(404).json({ message: 'Session not found' });
@@ -29,10 +33,15 @@ exports.overrideHours = async (req, res) => {
 
 exports.getPendingClockIns = async (req, res) => {
   try {
-    const pending = await DriverHours.find({ status: 'pending' }).populate('driver', 'name');
+    const pending = await DriverHours.find({ status: 'pending' }).populate(
+      'driver',
+      'name'
+    );
     res.json(pending);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch pending requests', error: err });
+    res
+      .status(500)
+      .json({ message: 'Failed to fetch pending requests', error: err });
   }
 };
 
@@ -61,23 +70,53 @@ exports.rejectClockIn = async (req, res) => {
     res.status(500).json({ message: 'Failed to reject', error: err });
   }
 };
+
 exports.getSessionsByDate = async (req, res) => {
   try {
-    const date = req.query.date; // format: YYYY-MM-DD
-    if (!date) return res.status(400).json({ message: 'Missing date' });
+    const { today, weekStart } = req.query;
 
-    const sessions = await DriverHours.find({ date, status: 'approved' })
-      .populate('driver', 'name');
+    const sessions = await DriverHours.find({
+      clockIn: {
+        $gte: new Date(weekStart),
+      },
+      status: 'approved',
+    }).populate('driver', 'name');
 
     const grouped = {};
-    for (const s of sessions) {
-      const id = s.driver._id;
-      if (!grouped[id]) {
-        grouped[id] = { driver: s.driver, sessions: [], totalHours: 0 };
+    sessions.forEach((session) => {
+      const driverId = session.driver._id.toString();
+      if (!grouped[driverId]) {
+        grouped[driverId] = {
+          driver: session.driver,
+          totalHours: 0,
+          weeklyTotalHours: 0,
+          sessions: [],
+        };
       }
-      grouped[id].sessions.push(s);
-      grouped[id].totalHours += s.totalHours || 0;
-    }
+
+      const sessionHours = (session.duration || 0) / 60;
+
+      grouped[driverId].weeklyTotalHours += sessionHours;
+
+      if (session.date === today.split('T')[0]) {
+        grouped[driverId].totalHours += sessionHours;
+      }
+
+      grouped[driverId].sessions.push(session);
+    });
+
+    Object.values(grouped).forEach((group) => {
+      group.totalHours = group.totalHours.toFixed(2);
+      group.weeklyTotalHours = group.weeklyTotalHours.toFixed(2);
+      group.todaysDate = today;
+      group.weekRange = weekStart;
+      group.sessions.forEach((session) => {
+        session.clockIn = session.clockIn.toISOString();
+        session.clockOut = session.clockOut
+          ? session.clockOut.toISOString()
+          : null;
+      });
+    });
 
     res.json(Object.values(grouped));
   } catch (err) {
@@ -90,9 +129,16 @@ exports.getWeeklyEarnings = async (req, res) => {
   const weekStart = getWeekStart(new Date());
 
   try {
-    const sessions = await DriverHours.find({ driver: driverId, weekStart, clockOut: { $exists: true } });
+    const sessions = await DriverHours.find({
+      driver: driverId,
+      weekStart,
+      clockOut: { $exists: true },
+    });
 
-    const baseEarnings = sessions.reduce((sum, s) => sum + (s.earnings || 0), 0);
+    const baseEarnings = sessions.reduce(
+      (sum, s) => sum + (s.earnings || 0),
+      0
+    );
 
     const uploads = await Upload.find({ driver: driverId, weekStart }); // Make sure your Upload model has `weekStart`
     const bonus = uploads.reduce((sum, u) => {
@@ -103,8 +149,9 @@ exports.getWeeklyEarnings = async (req, res) => {
 
     res.json({ base: baseEarnings, bonus, total });
   } catch (err) {
-    console.error('❌ Weekly earnings error:', err);
-    res.status(500).json({ message: 'Failed to fetch weekly earnings', error: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to fetch weekly earnings', error: err.message });
   }
 };
 
@@ -118,7 +165,9 @@ exports.assignDriver = async (req, res) => {
   }
 
   if (!driverId) {
-    return res.status(400).json({ message: 'Missing driverId in request body' });
+    return res
+      .status(400)
+      .json({ message: 'Missing driverId in request body' });
   }
 
   try {
@@ -134,7 +183,8 @@ exports.assignDriver = async (req, res) => {
 
     res.json({ message: 'Driver assigned successfully', updated });
   } catch (err) {
-    console.error('❌ Assign driver error:', err.message);
-    res.status(500).json({ message: 'Failed to assign driver', error: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to assign driver', error: err.message });
   }
 };

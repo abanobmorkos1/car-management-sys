@@ -7,8 +7,8 @@ const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  }
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 // 💰 Get Bonus Totals
@@ -16,11 +16,11 @@ exports.getBonuses = async (req, res) => {
   const start = getFriday(new Date());
   const uploads = await BonusUpload.find({
     driverId: req.user.id,
-    createdAt: { $gte: start }
+    createdAt: { $gte: start },
   });
 
-  const reviewCount = uploads.filter(u => u.type === 'review').length;
-  const customerCount = uploads.filter(u => u.type === 'customer').length;
+  const reviewCount = uploads.filter((u) => u.type === 'review').length;
+  const customerCount = uploads.filter((u) => u.type === 'customer').length;
   const total = reviewCount * 25 + customerCount * 5;
 
   res.json({ reviewCount, customerCount, total });
@@ -39,7 +39,7 @@ exports.saveUpload = async (req, res) => {
       driverId: req.user.id,
       key,
       type,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     await upload.save();
@@ -53,7 +53,20 @@ exports.saveUpload = async (req, res) => {
 // 📂 Get all uploads
 exports.getMyUploads = async (req, res) => {
   try {
-    const uploads = await BonusUpload.find({ driverId: req.user.id }).sort({ createdAt: -1 });
+    const { startDate } = req.query;
+    let uploads = [];
+    if (req.user.role !== 'Driver' && req.user.role !== 'Management') {
+      uploads = await BonusUpload.find({}).sort({
+        dateUploaded: -1,
+      });
+    } else {
+      uploads = await BonusUpload.find({
+        driverId: req.user.id,
+        dateUploaded: { $gte: new Date(startDate) },
+      }).sort({
+        dateUploaded: -1,
+      });
+    }
     res.status(200).json(uploads);
   } catch (err) {
     console.error('Failed to get uploads:', err);
@@ -64,7 +77,10 @@ exports.getMyUploads = async (req, res) => {
 // 🗑️ Delete from S3 and DB (Safe)
 exports.deleteUpload = async (req, res) => {
   try {
-    const upload = await BonusUpload.findOne({ _id: req.params.id, driverId: req.user.id });
+    const upload = await BonusUpload.findOne({
+      _id: req.params.id,
+      driverId: req.user.id,
+    });
     if (!upload) return res.status(404).json({ message: 'Upload not found' });
 
     let s3Key = upload.key;
@@ -79,10 +95,12 @@ exports.deleteUpload = async (req, res) => {
       return res.status(400).json({ error: 'Missing S3 key for deletion' });
     }
 
-    await s3.send(new DeleteObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: s3Key,
-    }));
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: s3Key,
+      })
+    );
 
     await upload.deleteOne();
     res.json({ message: 'Deleted successfully' });

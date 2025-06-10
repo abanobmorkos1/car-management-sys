@@ -4,21 +4,19 @@ const BonusUploadSchema = new mongoose.Schema({
   driverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
   type: {
     type: String,
     enum: ['review', 'customer'],
-    required: true
+    required: true,
   },
   key: { type: String, required: true },
 
   dateUploaded: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-
-
 });
 
 module.exports = mongoose.model('BonusUpload', BonusUploadSchema);

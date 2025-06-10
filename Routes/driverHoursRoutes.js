@@ -9,10 +9,7 @@ const {
   clockIn,
 } = require('../Controllers/driverHours.controller');
 
-
-
 const router = express.Router();
-router.post('/clock-in', verifyToken, clockIn);
 router.post('/clock-in-request', verifyToken, requestClockIn);
 router.post('/clock-out', verifyToken, clockOut);
 router.get('/status', verifyToken, getClockInStatus);
