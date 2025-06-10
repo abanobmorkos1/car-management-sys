@@ -21,9 +21,20 @@ app.set('trust proxy', 1);
 // ✅ Middleware
 app.use(morgan('dev'));
 app.use(cookieParser());
+const allowedOrigins = [
+  'https://app.vipautoapp.com',
+  'http://localhost:3000', // for local dev
+];
+
 app.use(
   cors({
-    origin: true,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
