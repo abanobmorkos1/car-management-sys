@@ -137,6 +137,7 @@ const getAlllr = async (req, res) => {
       .populate('salesPerson', 'name email') // only pull name/email
       .populate('driver', 'name ')
       .populate('updatedBy', 'name role')
+      .populate('odometerDisclosure')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
