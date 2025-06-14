@@ -43,10 +43,7 @@ const leaseSchema = new mongoose.Schema(
     damageReport: { type: String, default: 'No report' },
     hasTitle: { type: Boolean, default: false },
     titleKey: { type: String },
-    odometerKey: { type: String, required: true },
     leaseReturnMediaKeys: { type: [String], default: [] },
-    odometerStatementUrl: { type: String },
-    odometerStatementKey: { type: String },
     documents: [
       {
         type: { type: String, required: true },
@@ -74,6 +71,11 @@ const leaseSchema = new mongoose.Schema(
     },
     leftPlates: { type: Boolean, default: false },
     plateNumber: { type: String, default: '' },
+    odometerDisclosure: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'OdometerDamageDisclosure',
+      default: null,
+    },
   },
   { timestamps: true }
 );
