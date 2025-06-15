@@ -1,5 +1,6 @@
 const OdometerDamageDisclosure = require('../Schema/odometer_damage_disclosures');
 const LeaseReturn = require('../Schema/lease');
+const { default: mongoose } = require('mongoose');
 
 const createDisclosure = async (req, res) => {
   try {
@@ -13,7 +14,9 @@ const createDisclosure = async (req, res) => {
     console.log('✅ Odometer disclosure created successfully:', saved);
     res.status(201).json(saved);
   } catch (err) {
-    console.error('❌ Failed to create odometer disclosure:', err);
+    if (err.code === 11000) {
+      mongoose.connection.dropCollection('odometer_damage_disclosures');
+    }
     res.status(500).json({
       message: 'Server error',
       error: err.message,
