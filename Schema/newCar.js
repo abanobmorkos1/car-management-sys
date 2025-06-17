@@ -26,6 +26,11 @@ const carSchema = new Schema(
     customerName: { type: String },
     customerPhone: { type: String },
     customerAddress: { type: String },
+    carUploadDoc: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CarUploadDoc',
+      required: false,
+    },
   },
   { timestamps: true }
 );

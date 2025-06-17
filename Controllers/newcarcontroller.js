@@ -1,24 +1,6 @@
-const lease = require('../Schema/lease');
 const NewCar = require('../Schema/newCar');
-const fetch = require('node-fetch');
+const CarUploadDoc = require('../Schema/car_upload_doc');
 
-const decodeVIN = async (vin) => {
-  const res = await fetch(
-    `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`
-  );
-  const data = await res.json();
-  const get = (label) =>
-    data.Results.find((r) => r.Variable === label)?.Value?.trim() || '';
-
-  return {
-    make: get('Make'),
-    model: get('Model'),
-    trim: get('Trim'),
-    year: get('Model Year'),
-  };
-};
-
-// POST /api/car
 const createCar = async (req, res) => {
   try {
     const {
@@ -79,7 +61,6 @@ const createCar = async (req, res) => {
   }
 };
 
-// GET all
 const getCarById = async (req, res) => {
   try {
     const car = await NewCar.findById(req.params.id)
@@ -131,7 +112,6 @@ const getAllCars = async (req, res) => {
   }
 };
 
-// PUT update
 const updateCar = async (req, res) => {
   try {
     // If updating customer phone, sanitize it
@@ -159,7 +139,6 @@ const updateCar = async (req, res) => {
   }
 };
 
-// DELETE
 const deleteCar = async (req, res) => {
   try {
     const car = await NewCar.findByIdAndDelete(req.params.id);
@@ -190,6 +169,140 @@ const checkVin = async (req, res) => {
   }
 };
 
+const createPdfAgreement = async (req, res) => {
+  try {
+    const {
+      nameOfConsumer,
+      addressOfConsumer,
+      leaseOrPurchase,
+      make,
+      model,
+      year,
+      vin,
+      customOptions,
+      modificationFacility,
+      automobilePurchasedFrom,
+      priceOfVehicle,
+      estimatedPrice,
+      estimatedDeliveryDate,
+      placeOfDelivery,
+      consumerSignature,
+      signatureDate,
+      carId,
+    } = req.body;
+
+    if (!carId) {
+      return res.status(400).json({ message: 'Car ID is required' });
+    }
+
+    // Check if car exists
+    const car = await NewCar.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    const pdfAgreement = new CarUploadDoc({
+      nameOfConsumer: nameOfConsumer || '',
+      addressOfConsumer: addressOfConsumer || 'N/A',
+      leaseOrPurchase: leaseOrPurchase || '',
+      make: make || car.make || 'N/A',
+      model: model || car.model || 'N/A',
+      year: year || car.year?.toString() || 'N/A',
+      vin: vin || car.vin || 'N/A',
+      customOptions: customOptions || 'N/A',
+      modificationFacility: modificationFacility || 'N/A',
+      automobilePurchasedFrom: automobilePurchasedFrom || 'N/A',
+      priceOfVehicle: priceOfVehicle || 'N/A',
+      estimatedPrice: estimatedPrice || 'N/A',
+      estimatedDeliveryDate: estimatedDeliveryDate || 'N/A',
+      placeOfDelivery: placeOfDelivery || 'N/A',
+      consumerSignature: consumerSignature || 'N/A',
+      signatureDate: signatureDate || 'N/A',
+      carId,
+    });
+
+    const saved = await pdfAgreement.save();
+
+    await NewCar.findByIdAndUpdate(carId, { carUploadDoc: saved._id });
+
+    res.status(201).json({
+      message: 'PDF Agreement created successfully',
+      pdfAgreement: saved,
+    });
+  } catch (err) {
+    console.error('❌ Failed to create PDF agreement:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const getPdfAgreement = async (req, res) => {
+  try {
+    const { carId } = req.params;
+
+    const pdfAgreement = await CarUploadDoc.findOne({ carId }).populate(
+      'carId',
+      'make model year vin customerName'
+    );
+
+    if (!pdfAgreement) {
+      return res
+        .status(404)
+        .json({ message: 'PDF Agreement not found for this car' });
+    }
+
+    res.json(pdfAgreement);
+  } catch (err) {
+    console.error('❌ Failed to fetch PDF agreement:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updatePdfAgreement = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updated = await CarUploadDoc.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    }).populate('carId', 'make model year vin customerName');
+
+    if (!updated) {
+      return res.status(404).json({ message: 'PDF Agreement not found' });
+    }
+
+    res.json({
+      message: 'PDF Agreement updated successfully',
+      pdfAgreement: updated,
+    });
+  } catch (err) {
+    console.error('❌ Failed to update PDF agreement:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const deletePdfAgreement = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pdfAgreement = await CarUploadDoc.findById(id);
+    if (!pdfAgreement) {
+      return res.status(404).json({ message: 'PDF Agreement not found' });
+    }
+
+    // Remove reference from car
+    await NewCar.findByIdAndUpdate(pdfAgreement.carId, {
+      $unset: { carUploadDoc: 1 },
+    });
+
+    await CarUploadDoc.findByIdAndDelete(id);
+
+    res.json({ message: 'PDF Agreement deleted successfully' });
+  } catch (err) {
+    console.error('❌ Failed to delete PDF agreement:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   createCar,
   getAllCars,
@@ -197,4 +310,8 @@ module.exports = {
   updateCar,
   deleteCar,
   checkVin,
+  createPdfAgreement,
+  getPdfAgreement,
+  updatePdfAgreement,
+  deletePdfAgreement,
 };
