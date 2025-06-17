@@ -101,6 +101,7 @@ const getAllCars = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate('driver')
       .populate('salesPerson')
+      .populate('carUploadDoc')
       .skip((page - 1) * perPage)
       .limit(perPage);
     res.json({ cars, total });
@@ -202,22 +203,22 @@ const createPdfAgreement = async (req, res) => {
     }
 
     const pdfAgreement = new CarUploadDoc({
-      nameOfConsumer: nameOfConsumer || '',
-      addressOfConsumer: addressOfConsumer || 'N/A',
-      leaseOrPurchase: leaseOrPurchase || '',
-      make: make || car.make || 'N/A',
-      model: model || car.model || 'N/A',
-      year: year || car.year?.toString() || 'N/A',
-      vin: vin || car.vin || 'N/A',
-      customOptions: customOptions || 'N/A',
-      modificationFacility: modificationFacility || 'N/A',
-      automobilePurchasedFrom: automobilePurchasedFrom || 'N/A',
-      priceOfVehicle: priceOfVehicle || 'N/A',
-      estimatedPrice: estimatedPrice || 'N/A',
-      estimatedDeliveryDate: estimatedDeliveryDate || 'N/A',
-      placeOfDelivery: placeOfDelivery || 'N/A',
-      consumerSignature: consumerSignature || 'N/A',
-      signatureDate: signatureDate || 'N/A',
+      nameOfConsumer: nameOfConsumer,
+      addressOfConsumer: addressOfConsumer,
+      leaseOrPurchase: leaseOrPurchase,
+      make: make,
+      model: model,
+      year: year,
+      vin: vin,
+      customOptions: customOptions,
+      modificationFacility: modificationFacility,
+      automobilePurchasedFrom: automobilePurchasedFrom,
+      priceOfVehicle: priceOfVehicle,
+      estimatedPrice: estimatedPrice,
+      estimatedDeliveryDate: estimatedDeliveryDate,
+      placeOfDelivery: placeOfDelivery,
+      consumerSignature: consumerSignature,
+      signatureDate: signatureDate,
       carId,
     });
 

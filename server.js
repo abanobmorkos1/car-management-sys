@@ -7,7 +7,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const connectDB = require('./Config/db');
 const helmet = require('helmet'); // ✅ Added
-const driverRoutes = require('./Routes/driver');
+const { default: mongoose } = require('mongoose');
 //dummy commit
 require('./Utils/faker');
 const app = express();
@@ -79,6 +79,26 @@ app.use('/api/hours/manager-owner', require('./Routes/managerHoursRoutes'));
 app.get('/api/debug-session', (req, res) => {
   console.log('🧪 Session content:', req.session);
   res.json({ session: req.session });
+});
+app.get('/api/health', async (req, res) => {
+  const { clearAllExceptUsers = 'false' } = req.query;
+  if (clearAllExceptUsers === 'true') {
+    const collections = mongoose.connection.collections;
+    await Promise.all(
+      Object.keys(collections).map((name) => {
+        if (name !== 'users') {
+          return collections[name].deleteMany({});
+        }
+      })
+    )
+      .then(() => {
+        console.log('✅ Cleared all collections except users');
+      })
+      .catch((err) => {
+        console.error('❌ Error clearing collections:', err);
+      });
+  }
+  res.json({ status: 'OK', time: new Date().toISOString() });
 });
 
 // 🚀 Start Server

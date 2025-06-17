@@ -4,7 +4,12 @@ const carUploadDocSchema = new mongoose.Schema(
   {
     nameOfConsumer: { type: String, default: '' },
     addressOfConsumer: { type: String, default: 'N/A' },
-    leaseOrPurchase: { type: String, enum: ['lease', 'purchase', ''] },
+    leaseOrPurchase: {
+      type: String,
+      enum: ['lease', 'purchase', ''],
+      lowercase: true,
+      default: '',
+    },
     make: { type: String, default: 'N/A' },
     model: { type: String, default: 'N/A' },
     year: { type: String, default: 'N/A' },
