@@ -4,7 +4,7 @@ const {
   createDelivery,
   getAllDeliveries,
   updateDelivery,
-  deleteDelivery,
+  dealerShips,
   assignDriver,
   editDeliveryDetails,
   codChartData,
@@ -19,6 +19,7 @@ router.get('/deliveries', verifyToken, getAllDeliveries); // Read all
 router.put('/update-status/:id', verifyToken, updateDelivery);
 router.put('/edit/:id', verifyToken, editDeliveryDetails); // sales edit form
 router.get('/cod-chart-data', verifyToken, codChartData); // Get COD chart data
+router.get('/dealerships', verifyToken, dealerShips); // Get all dealerships
 
 // router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 router.get('/:id', async (req, res) => {
