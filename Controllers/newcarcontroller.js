@@ -103,6 +103,7 @@ const getAllCars = async (req, res) => {
       .populate('driver')
       .populate('salesPerson')
       .populate('carUploadDoc')
+      .populate('linkedDelivery')
       .skip((page - 1) * perPage)
       .limit(perPage);
     res.json({ cars, total });
