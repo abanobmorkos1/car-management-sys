@@ -8,6 +8,7 @@ const {
   assignDriver,
   editDeliveryDetails,
   codChartData,
+  getDeliveryByVin,
 } = require('../Controllers/deliveriescontroller');
 const Delivery = require('../Schema/deliveries');
 const COD = require('../Schema/cod');
@@ -20,7 +21,7 @@ router.put('/update-status/:id', verifyToken, updateDelivery);
 router.put('/edit/:id', verifyToken, editDeliveryDetails); // sales edit form
 router.get('/cod-chart-data', verifyToken, codChartData); // Get COD chart data
 router.get('/dealerships', verifyToken, dealerShips); // Get all dealerships
-
+router.get('/vin', verifyToken, getDeliveryByVin);
 // router.delete('/delivery/:id',verifyToken, deleteDelivery);       // Delete
 router.get('/:id', async (req, res) => {
   try {

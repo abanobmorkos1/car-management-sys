@@ -349,6 +349,23 @@ const dealerShips = async (req, res) => {
   }
 };
 
+const getDeliveryByVin = async (req, res) => {
+  try {
+    const { vin } = req.query;
+    if (!vin) {
+      return res.status(400).json({ message: 'VIN is required' });
+    }
+    const delivery = await Delivery.findOne({ vin });
+    if (!delivery) {
+      return res
+        .status(404)
+        .json({ message: 'Delivery not found for this VIN' });
+    }
+    res.status(200).json(delivery);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 module.exports = {
   createDelivery,
   getAllDeliveries,
@@ -358,4 +375,5 @@ module.exports = {
   assignDriver,
   codChartData,
   dealerShips,
+  getDeliveryByVin,
 };
