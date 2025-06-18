@@ -1,6 +1,6 @@
 const NewCar = require('../Schema/newCar');
 const CarUploadDoc = require('../Schema/car_upload_doc');
-
+const Delivery = require('../Schema/deliveries');
 const createCar = async (req, res) => {
   try {
     const {
@@ -31,7 +31,7 @@ const createCar = async (req, res) => {
     } else if (sanitizedPhone.length === 11 && sanitizedPhone.startsWith('1')) {
       sanitizedPhone = `+${sanitizedPhone}`;
     }
-
+    const linkedDelivery = (await Delivery.findOne({ vin: vin }))?._id || null;
     const car = new NewCar({
       trim,
       vin,
@@ -46,6 +46,7 @@ const createCar = async (req, res) => {
       customerName: customerName.trim(),
       customerPhone: sanitizedPhone,
       customerAddress: customerAddress.trim(),
+      linkedDelivery: linkedDelivery,
     });
 
     const saved = await car.save();
