@@ -78,7 +78,7 @@ const OdometerDamageDisclosureSchema = new mongoose.Schema(
         },
       },
       dateOfStatement: {
-        type: Date,
+        type: String,
       },
     },
 
@@ -105,7 +105,7 @@ const OdometerDamageDisclosureSchema = new mongoose.Schema(
         },
       },
       dateOfStatement: {
-        type: Date,
+        type: String,
       },
     },
   },
