@@ -31,6 +31,11 @@ const carSchema = new Schema(
       ref: 'CarUploadDoc',
       required: false,
     },
+    linkedDelivery: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Delivery',
+      required: false,
+    },
   },
   { timestamps: true }
 );
