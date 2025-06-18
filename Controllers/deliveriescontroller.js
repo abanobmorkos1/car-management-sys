@@ -31,7 +31,7 @@ const getAllDeliveries = async (req, res) => {
           {
             deliveryDate: {
               $gte: new Date(start),
-              $lte: new Date(end),
+              $lt: new Date(end),
             },
           },
         ],
@@ -46,7 +46,7 @@ const getAllDeliveries = async (req, res) => {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .sort({ deliveryDate: -1 });
-    delete filter.driver; // Remove driver from filter to avoid counting it in total
+    delete filter.driver;
     const total = await Delivery.countDocuments(filter);
     const assigned = await Delivery.countDocuments({
       ...filter,
@@ -54,7 +54,6 @@ const getAllDeliveries = async (req, res) => {
     });
     res.json({ deliveries, total, assigned });
   } catch (err) {
-    console.error('❌ Error fetching deliveries:', err);
     res.status(500).json({ message: 'Failed to fetch deliveries' });
   }
 };
@@ -74,24 +73,19 @@ const updateDelivery = async (req, res) => {
     if (!delivery)
       return res.status(404).json({ message: 'Delivery not found' });
 
-    // ❌ If user is a driver and NOT assigned to this delivery, reject
     if (userRole === 'Driver' && delivery.driver?.toString() !== userId) {
       return res
         .status(403)
         .json({ message: 'Drivers can only update their assigned deliveries' });
     }
-
-    // ✅ Managers can assign themselves if no driver is set
     if (userRole === 'Management' && !delivery.driver) {
       delivery.driver = userId;
     }
 
-    // ✅ Now update the status
     const prevStatus = delivery.status;
     delivery.status = req.body.status;
     await delivery.save();
 
-    // ✅ If status is 'Delivered' → redirect to COD creation (if not already exists)
     if (req.body.status === 'Delivered' && prevStatus !== 'Delivered') {
       const codExists = await COD.findOne({ delivery: delivery._id });
       if (!codExists) {
@@ -113,57 +107,76 @@ const editDeliveryDetails = async (req, res) => {
   try {
     const deliveryId = req.params.id;
 
+    const originalDelivery =
+      await Delivery.findById(deliveryId).populate('driver');
+    if (!originalDelivery) {
+      return res.status(404).json({ message: 'Delivery not found' });
+    }
+
     const updatedDelivery = await Delivery.findByIdAndUpdate(
       deliveryId,
       req.body,
       { new: true }
-    ).populate('driver'); // 👈 Ensure driver info is available
+    ).populate('driver');
+
     const managers = await User.find({ role: 'Management' }).select(
       'name phoneNumber'
     );
 
-    if (!updatedDelivery) {
-      return res.status(404).json({ message: 'Delivery not found' });
-    }
     const checkNumber = (phoneNumber) => {
       phoneNumber = phoneNumber.replace(/\D/g, '').replace(/^1/, '');
       phoneNumber = '+1' + phoneNumber;
       const phoneRegex = /^\+?1?\d{10}$/;
       return phoneRegex.test(phoneNumber);
     };
-    if (updatedDelivery.driver?.phoneNumber) {
-      if (checkNumber(updatedDelivery.driver.phoneNumber)) {
-        await sendSMS(
-          updatedDelivery.driver.phoneNumber,
-          `DriveFast: Delivery for ${
-            updatedDelivery.customerName
-          } updated. New address: ${
-            updatedDelivery.address || 'N/A'
-          }. Delivery at ${new Date(
-            updatedDelivery.deliveryDate
-          ).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}. Reply STOP to opt out.`
-        );
-      }
+
+    const changes = [];
+    if (originalDelivery.address !== updatedDelivery.address) {
+      changes.push(`Address: ${updatedDelivery.address || 'N/A'}`);
     }
-    //update the managers about the delivery update
-    for (const manager of managers) {
-      if (checkNumber(manager.phoneNumber)) {
-        await sendSMS(
-          manager.phoneNumber,
-          `DriveFast: Delivery for ${updatedDelivery.customerName} updated by ${
-            req.session.user.name
-          }. New address: ${
-            updatedDelivery.address || 'N/A'
-          }. Delivery at ${new Date(
-            updatedDelivery.deliveryDate
-          ).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}. Reply STOP to opt out.`
-        );
+    if (
+      originalDelivery.deliveryDate?.getTime() !==
+      updatedDelivery.deliveryDate?.getTime()
+    ) {
+      changes.push(
+        `Delivery time: ${new Date(
+          updatedDelivery.deliveryDate
+        ).toLocaleString()}`
+      );
+    }
+    if (originalDelivery.customerName !== updatedDelivery.customerName) {
+      changes.push(`Customer: ${updatedDelivery.customerName}`);
+    }
+    if (originalDelivery.customerPhone !== updatedDelivery.customerPhone) {
+      changes.push(`Customer phone: ${updatedDelivery.customerPhone}`);
+    }
+    if (originalDelivery.vehicleDetails !== updatedDelivery.vehicleDetails) {
+      changes.push(`Vehicle: ${updatedDelivery.vehicleDetails}`);
+    }
+    if (originalDelivery.dealershipName !== updatedDelivery.dealershipName) {
+      changes.push(`Dealership: ${updatedDelivery.dealershipName}`);
+    }
+    if (originalDelivery.codAmount !== updatedDelivery.codAmount) {
+      changes.push(`COD amount: $${updatedDelivery.codAmount || 0}`);
+    }
+
+    if (changes.length > 0) {
+      const changesText = changes.join(', ');
+      if (updatedDelivery.driver?.phoneNumber) {
+        if (checkNumber(updatedDelivery.driver.phoneNumber)) {
+          await sendSMS(
+            updatedDelivery.driver.phoneNumber,
+            `DriveFast: Delivery for ${updatedDelivery.customerName} updated. Changes: ${changesText}. Reply STOP to opt out.`
+          );
+        }
+      }
+      for (const manager of managers) {
+        if (checkNumber(manager.phoneNumber)) {
+          await sendSMS(
+            manager.phoneNumber,
+            `DriveFast: Delivery for ${updatedDelivery.customerName} updated by ${req.session.user.name}. Changes: ${changesText}. Reply STOP to opt out.`
+          );
+        }
       }
     }
 
@@ -174,7 +187,6 @@ const editDeliveryDetails = async (req, res) => {
   }
 };
 
-// ✅ Delete Delivery
 const deleteDelivery = async (req, res) => {
   try {
     const deleted = await Delivery.findByIdAndDelete(req.params.id);
@@ -188,7 +200,6 @@ const deleteDelivery = async (req, res) => {
   }
 };
 
-// ✅ Assign Driver
 const assignDriver = async (req, res) => {
   const { id } = req.params;
   const { driverId } = req.body;
@@ -211,7 +222,6 @@ const assignDriver = async (req, res) => {
       .status(200)
       .json({ message: 'Driver assigned successfully', delivery: updated });
   } catch (err) {
-    console.error('❌ Error during driver assignment:', err);
     res
       .status(500)
       .json({ message: 'Failed to assign driver', error: err.message });
@@ -228,16 +238,14 @@ const codChartData = async (req, res) => {
     }
     const startDate = new Date(start);
     const endDate = new Date(end);
-    endDate.setHours(23, 59, 59, 999); // Set end date to end of the day
+    endDate.setHours(23, 59, 59, 999);
 
-    // Get deliveries with COD data within date range
     const deliveries = await Delivery.find({
       deliveryDate: { $gte: startDate, $lte: endDate },
       status: 'Delivered',
       codAmount: { $exists: true, $ne: null, $gt: 0 },
     }).select('deliveryDate codAmount paymentMethod');
 
-    // Calculate summary statistics
     const totalCODCollected = deliveries.reduce(
       (sum, delivery) => sum + (delivery.codAmount || 0),
       0
@@ -246,7 +254,6 @@ const codChartData = async (req, res) => {
     const averageCODAmount =
       totalCollections > 0 ? totalCODCollected / totalCollections : 0;
 
-    // Get total deliveries for collection rate
     const totalDeliveries = await Delivery.countDocuments({
       deliveryDate: { $gte: startDate, $lte: endDate },
       status: 'Delivered',
@@ -254,7 +261,6 @@ const codChartData = async (req, res) => {
     const collectionRate =
       totalDeliveries > 0 ? (totalCollections / totalDeliveries) * 100 : 0;
 
-    // Group by date for daily collections
     const dailyCollections = [];
     const dateMap = new Map();
 
@@ -283,10 +289,8 @@ const codChartData = async (req, res) => {
       });
     });
 
-    // Sort by date
     dailyCollections.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Group by payment method
     const paymentMethodMap = new Map();
     deliveries.forEach((delivery) => {
       const method = delivery.paymentMethod || 'Cash';
@@ -329,8 +333,19 @@ const codChartData = async (req, res) => {
 
     res.status(200).json(response);
   } catch (err) {
-    console.error('❌ Error fetching COD chart data:', err);
     res.status(500).json({ message: 'Failed to fetch COD chart data' });
+  }
+};
+
+const dealerShips = async (req, res) => {
+  try {
+    const searchText = req.query.q || '';
+    const dealerships = await Delivery.distinct('dealershipName', {
+      dealershipName: { $regex: searchText, $options: 'i' },
+    });
+    res.status(200).json(dealerships);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch dealerships' });
   }
 };
 
@@ -342,4 +357,5 @@ module.exports = {
   deleteDelivery,
   assignDriver,
   codChartData,
+  dealerShips,
 };
