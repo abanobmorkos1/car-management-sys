@@ -37,7 +37,6 @@ const deliverySchema = new mongoose.Schema(
       carMake: { type: String },
       carModel: { type: String },
     },
-
     status: {
       type: String,
       enum: [
@@ -47,6 +46,13 @@ const deliverySchema = new mongoose.Schema(
         'Delivered',
       ],
     },
+    transactionType: {
+      type: String,
+      enum: ['lease', 'purchase'],
+      lowercase: true,
+    },
+    dealershipName: { type: String },
+    deliveryPrice: { type: String },
   },
   { timestamps: true }
 );
